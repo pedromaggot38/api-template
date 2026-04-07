@@ -13,19 +13,16 @@ export const signup = catchAsync(async (req, res, next) => {
   return createSendToken(user, 201, res);
 });
 
-export const login = catchAsync(async (req, res, next) => {
+export const signin = catchAsync(async (req, res, next) => {
   const { username, password } = req.body;
 
-  const { user } = await authService.login(username, password);
+  const { user } = await authService.authenticate(username, password);
 
   return createSendToken(user, 200, res);
 });
 
-export const logout = catchAsync(async (req, res, next) => {
+export const signout = catchAsync(async (req, res, next) => {
   clearLogoutCookie(res);
 
-  res.status(200).json({
-    status: 'success',
-    message: 'Logout realizado com sucesso!',
-  });
+  return resfc(res, 200, null, 'Logout realizado com sucesso!');
 });

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const RoleEnum = z.enum(['user', 'admin', 'root']);
 
-export const userSchema = z
+export const registerSchema = z
   .object({
     name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres'),
     username: z

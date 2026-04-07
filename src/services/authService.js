@@ -8,7 +8,7 @@ export const register = async (userData) => {
   return { user: newUser };
 };
 
-export const login = async (username, password) => {
+export const authenticate = async (username, password) => {
   const user = await db.user.findUnique({
     where: { username },
   });
