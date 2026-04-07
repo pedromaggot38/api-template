@@ -61,3 +61,25 @@ Como o ambiente é isolado, utilize os atalhos abaixo para gerenciar o sistema:
 * `docker compose exec app npx prisma generate`: Atualiza o cliente do Prisma após mudanças no schema.
 
 ---
+
+## 🗄️ Gestão do Banco de Dados (Prisma)
+
+Todos os comandos devem ser executados através do container da aplicação:
+
+### Resetar o Banco de Dados
+Para limpar todos os dados e sincronizar o schema do zero (obrigatório em certas mudanças estruturais):
+```bash
+docker compose exec app npx prisma migrate reset
+```
+
+### Sincronizar Novas Tabelas
+Sempre que alterar o `schema.prisma`, execute:
+```bash
+docker compose exec app npx prisma migrate dev --name nome_da_migracao
+```
+
+### Interface Visual (Prisma Studio)
+Para gerenciar os dados pelo navegador:
+```bash
+docker compose exec app npx prisma studio
+```
