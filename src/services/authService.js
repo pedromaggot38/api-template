@@ -19,8 +19,17 @@ export const authenticate = async (username, password) => {
     throw new AppError('Username ou password incorretos', 401);
   }
 
-  // Se o campo isActive for utilizado futuramente, a verificação seria feita aqui:
-  // if (user.isActive === false) throw new AppError('Conta desativada', 401);
+  const allowedStatuses = ['active', 'pending'];
+
+  if (user.status !== 'active') {
+    const messages = {
+      banned: 'Sua conta foi banida por violação dos termos.',
+      pending: 'Por favor, confirme seu e-mail para acessar.',
+      deactivated: 'Esta conta foi desativada.',
+    };
+
+    throw new Error(messages[user.status] || 'Acesso negado.');
+  }
 
   return { user };
 };

@@ -7,6 +7,7 @@ export const findAllUsers = async (options = {}) => {
     limit = 10,
     search,
     role,
+    status,
     sortBy = 'createdAt',
     sortOrder = 'desc',
   } = options;
@@ -16,6 +17,9 @@ export const findAllUsers = async (options = {}) => {
 
   if (role) {
     where.role = role;
+  }
+  if (status) {
+    where.status = status;
   }
 
   if (search) {

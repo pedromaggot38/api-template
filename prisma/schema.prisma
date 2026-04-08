@@ -9,6 +9,13 @@ datasource db {
   extensions = [citext]
 }
 
+enum UserStatus {
+  pending
+  active
+  banned
+  deactivated
+}
+
 enum Role {
   user
   admin
@@ -16,16 +23,16 @@ enum Role {
 }
 
 model User {
-  id       String @id @default(uuid())
+  id       String     @id @default(uuid())
   name     String
-  username String @unique @db.Citext
-  email    String @unique @db.Citext
+  username String     @unique @db.Citext
+  email    String     @unique @db.Citext
   password String
-  role     Role   @default(user)
+  role     Role       @default(user)
+  status   UserStatus @default(pending)
 
   // avatar   String?
   // phone    String?
-  // isActive Boolean @default(true)
   // lastLogin         DateTime?
   // passwordChangedAt DateTime?
 
