@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 
 const globalForPrisma = globalThis;
 
+/** @type {PrismaClient} */
 const db =
   globalForPrisma.prisma ||
   new PrismaClient().$extends({

@@ -3,8 +3,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import express from 'express';
 import routes from './routes/index.js';
-import errorHandler from './middlewares/errorHandler.js';
+import cookieParser from 'cookie-parser';
 import AppError from './utils/appError.js';
+import errorHandler from './middlewares/errorHandler.js';
 
 const app = express();
 
@@ -25,6 +26,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
 
 app.use('/api/v1', routes);
 

@@ -5,6 +5,7 @@ services:
       - DATABASE_URL=postgresql://postgres:password@db:5432/mydb?schema=public
     ports:
       - '3000:3000'
+      - '5555:5555'
     env_file:
       - .env
     volumes:
