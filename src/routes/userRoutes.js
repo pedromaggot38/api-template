@@ -1,6 +1,8 @@
 import express from 'express';
 import * as userController from '../controllers/userController.js';
 import { protect, restrictTo } from '../middlewares/auth.js';
+import validate from '../middlewares/validate.js';
+import { updateUserSchema } from '../models/userSchema.js';
 
 const router = express.Router();
 
@@ -13,6 +15,6 @@ router.route('/').get(userController.getAllUsers);
 router
   .route('/:identifier')
   .get(userController.getUser)
-  .patch(userController.update);
+  .patch(validate(updateUserSchema), userController.update);
 
 export default router;

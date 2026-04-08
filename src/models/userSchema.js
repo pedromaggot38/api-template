@@ -1,8 +1,12 @@
 import { z } from 'zod';
 
-const RoleEnum = z.enum(['user', 'admin', 'root']);
+const UserRole = z.enum(['user', 'admin', 'root']);
+const UserStatus = z.enum(['pending', 'active', 'banned', 'deactivated']);
 
 const normalizeInput = (val) => val.trim().toLowerCase();
+export const identifierParamSchema = z.object({
+  identifier: z.string().min(3, 'Identificador inválido (UUID ou Username)'),
+});
 
 export const registerSchema = z
   .object({
@@ -36,8 +40,36 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Senha é obrigatória'),
 });
 
-export const updateMyProfileSchema = z.object({
-  name: z.string().min(3).optional(),
-  avatar: z.string().url('URL do avatar inválida').optional(),
-  phone: z.string().min(10, 'Telefone inválido').optional(),
-});
+export const updateUserSchema = registerSchema
+  .pick({
+    name: true,
+    username: true,
+    email: true,
+  })
+  .extend({
+    role: UserRole.optional(),
+    status: UserStatus.optional(),
+  })
+  .partial();
+
+export const updateMeSchema = registerSchema
+  .pick({
+    name: true,
+    email: true,
+    username: true,
+  })
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, 'Envie ao menos um campo');
+
+export const updateMyPasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Senha atual é obrigatória'),
+    newPassword: z
+      .string()
+      .min(6, 'A nova senha deve ter pelo menos 6 caracteres'),
+    passwordConfirm: z.string(),
+  })
+  .refine((data) => data.newPassword === data.passwordConfirm, {
+    message: 'As senhas não coincidem',
+    path: ['passwordConfirm'],
+  });

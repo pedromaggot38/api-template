@@ -9,6 +9,4 @@ router.post('/signup', validate(registerSchema), authController.signup);
 router.post('/signin', validate(loginSchema), authController.signin);
 router.get('/signout', authController.signout);
 
-// router.get('/me');
-
 export default router;
