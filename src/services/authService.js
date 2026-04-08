@@ -1,4 +1,6 @@
 import db from '../config/db.js';
+import bcrypt from 'bcryptjs';
+import AppError from '../utils/appError.js';
 
 export const register = async (userData) => {
   const newUser = await db.user.create({
