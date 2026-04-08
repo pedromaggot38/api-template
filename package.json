@@ -10,6 +10,7 @@
     "docker:start": "npx prisma generate && npx prisma migrate dev && npm run dev",
     "db:migrate": "npx prisma migrate dev",
     "db:generate": "npx prisma generate",
+    "db:reset": "prisma migrate reset --force",
     "db:studio": "npx prisma studio",
     "db:seed": "node prisma/seed.js",
     "lint": "eslint .",

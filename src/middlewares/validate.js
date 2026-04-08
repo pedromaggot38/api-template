@@ -2,7 +2,10 @@ const validate =
   (schema, target = 'body') =>
   (req, res, next) => {
     try {
-      schema.parse(req[target]);
+      const parsedData = schema.parse(req[target]);
+
+      req[target] = parsedData;
+
       next();
     } catch (error) {
       if (error.issues) {

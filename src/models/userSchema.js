@@ -2,14 +2,20 @@ import { z } from 'zod';
 
 const RoleEnum = z.enum(['user', 'admin', 'root']);
 
+const normalizeInput = (val) => val.trim().toLowerCase();
+
 export const registerSchema = z
   .object({
     name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres'),
     username: z
       .string()
       .min(3, 'O username deve ter pelo menos 3 caracteres')
-      .max(20, 'O username deve ter no máximo 20 caracteres'),
-    email: z.string().email('Formato de e-mail inválido'),
+      .max(20, 'O username deve ter no máximo 20 caracteres')
+      .transform(normalizeInput),
+    email: z
+      .string()
+      .email('Formato de e-mail inválido')
+      .transform(normalizeInput),
     password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
     passwordConfirm: z.string(),
     /*
@@ -23,7 +29,10 @@ export const registerSchema = z
   });
 
 export const loginSchema = z.object({
-  username: z.string().min(1, 'Username é obrigatório'),
+  username: z
+    .string()
+    .min(1, 'Username é obrigatório')
+    .transform(normalizeInput),
   password: z.string().min(1, 'Senha é obrigatória'),
 });
 
