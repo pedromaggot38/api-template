@@ -4,6 +4,7 @@ import {
   clearLogoutCookie,
   createSendToken,
 } from '../utils/controllers/authUtils.js';
+import { resfc } from '../utils/resfc.js';
 
 export const signup = catchAsync(async (req, res, next) => {
   const { passwordConfirm, ...userData } = req.body;
