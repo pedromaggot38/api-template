@@ -11,8 +11,8 @@ router.use(restrictTo('root', 'admin'));
 router.route('/').get(userController.getAllUsers);
 
 router
-  .route('/:id')
+  .route('/:identifier')
   .get(userController.getUser)
-  .patch(userController.updateUser);
+  .patch(userController.update);
 
 export default router;

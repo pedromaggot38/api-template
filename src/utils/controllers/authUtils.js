@@ -33,7 +33,11 @@ export const createSendToken = (user, statusCode, res) => {
   // Se tiver o campo isActive ou outros internos, pode remover aqui também
   // delete userResponse.isActive;
 
-  return resfc(res, statusCode, { user: userResponse, token });
+  return resfc({
+    res,
+    code: statusCode,
+    data: { user: userResponse, token },
+  });
 };
 
 export const clearLogoutCookie = (res) => {

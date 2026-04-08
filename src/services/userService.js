@@ -1,5 +1,17 @@
 import db from '../config/db.js';
 import AppError from '../utils/appError.js';
+import { parseUserIdentifier } from '../utils/controllers/userUtils.js';
+
+const findUserOrThrow = async (identifier) => {
+  const where = parseUserIdentifier(identifier);
+  const user = await db.user.findUnique({ where });
+
+  if (!user) {
+    throw new AppError('Usuário não encontrado', 404);
+  }
+
+  return user;
+};
 
 export const findAllUsers = async (options = {}) => {
   const {
@@ -51,11 +63,16 @@ export const findAllUsers = async (options = {}) => {
   };
 };
 
-export const findUserById = async (id) => {
-  const user = await db.user.findUnique({ where: { id } });
-  if (!user) {
-    throw new AppError('Usuário não encontrado', 404);
-  }
+export const getUserByIdentifier = async (identifier) => {
+  return await findUserOrThrow(identifier);
+};
 
-  return user;
+export const updateUser = async (identifier, data) => {
+  await findUserOrThrow(identifier);
+  const where = parseUserIdentifier(identifier);
+
+  return await db.user.update({
+    where,
+    data,
+  });
 };

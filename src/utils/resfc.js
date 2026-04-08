@@ -1,12 +1,12 @@
-export const resfc = (
+export const resfc = ({
   res,
   code,
   data = null,
   message = null,
   results = null,
-) => {
+}) => {
   const resBody = {
-    status: 'success',
+    status: code < 400 ? 'success' : 'error',
   };
 
   if (message) resBody.message = message;
@@ -14,19 +14,20 @@ export const resfc = (
 
   if (data && typeof data === 'object' && Object.keys(data).length > 0) {
     const sanitizedData = JSON.parse(JSON.stringify(data));
-    if ('password' in sanitizedData) {
-      delete sanitizedData.password;
-    }
-    for (const key in sanitizedData) {
-      if (
-        sanitizedData[key] &&
-        typeof sanitizedData[key] === 'object' &&
-        'password' in sanitizedData[key]
-      ) {
-        delete sanitizedData[key].password;
-      }
-    }
 
+    const removePassword = (obj) => {
+      if (!obj || typeof obj !== 'object') return;
+
+      if ('password' in obj) delete obj.password;
+
+      Object.keys(obj).forEach((key) => {
+        if (obj[key] && typeof obj[key] === 'object') {
+          removePassword(obj[key]);
+        }
+      });
+    };
+
+    removePassword(sanitizedData);
     resBody.data = sanitizedData;
   }
 

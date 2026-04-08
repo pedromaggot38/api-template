@@ -25,5 +25,9 @@ export const signin = catchAsync(async (req, res, next) => {
 export const signout = catchAsync(async (req, res, next) => {
   clearLogoutCookie(res);
 
-  return resfc(res, 200, null, 'Logout realizado com sucesso!');
+  return resfc({
+    res,
+    code: 200,
+    message: 'Logout realizado com sucesso!',
+  });
 });
