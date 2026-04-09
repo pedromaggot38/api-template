@@ -36,10 +36,31 @@ export const protect = catchAsync(async (req, res, next) => {
     );
   }
 
-  // Verificar se o usuário está ativo (se você usar o campo isActive)
-  // if (!currentUser.isActive) {
-  //   return next(new AppError('Este usuário está desativado.', 401));
-  // }
+  const allowedStatuses = ['active', 'pending'];
+  if (!allowedStatuses.includes(currentUser.status)) {
+    return next(
+      new AppError(
+        'Sua conta foi desativada ou banida. Por favor, contate o suporte.',
+        403,
+      ),
+    );
+  }
+
+  if (currentUser.passwordChangedAt) {
+    const changedTimestamp = parseInt(
+      currentUser.passwordChangedAt.getTime() / 1000,
+      10,
+    );
+
+    if (decoded.iat < changedTimestamp) {
+      return next(
+        new AppError(
+          'Sua senha foi alterada recentemente. Por favor, faça login novamente.',
+          401,
+        ),
+      );
+    }
+  }
 
   req.user = currentUser;
   next();

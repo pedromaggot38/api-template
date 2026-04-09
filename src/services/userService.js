@@ -109,6 +109,12 @@ export const updateMyPassword = async (
     throw new AppError('A senha atual está incorreta', 401);
   }
 
+  const isSameAsOld = await bcrypt.compare(newPassword, user.password);
+
+  if (isSameAsOld) {
+    throw new AppError('A nova senha não pode ser igual à senha atual', 400);
+  }
+
   return await db.user.update({
     where: { id: userId },
     data: {
