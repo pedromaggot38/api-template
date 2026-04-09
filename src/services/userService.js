@@ -69,13 +69,28 @@ export const getUserByIdentifier = async (identifier) => {
 };
 
 export const updateUser = async (identifier, data) => {
-  await findUserOrThrow(identifier);
-  const where = parseUserIdentifier(identifier);
+  const currentUser = await findUserOrThrow(identifier);
+  const changes = {};
 
-  return await db.user.update({
-    where,
-    data,
+  Object.keys(data).forEach((key) => {
+    if (data[key] !== undefined && data[key] !== currentUser[key]) {
+      changes[key] = data[key];
+    }
   });
+
+  const hasChanges = Object.keys(changes).length > 0;
+
+  if (!hasChanges) {
+    return { user: currentUser, wasUpdated: false };
+  }
+
+  const where = parseUserIdentifier(identifier);
+  const updatedUser = await db.user.update({
+    where,
+    data: changes,
+  });
+
+  return { user: updatedUser, wasUpdated: true };
 };
 
 export const updateMyPassword = async (

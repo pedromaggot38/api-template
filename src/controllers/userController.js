@@ -31,13 +31,18 @@ export const update = catchAsync(async (req, res) => {
   const { identifier } = req.params;
   const updateData = req.body;
 
-  const updatedUser = await userService.updateUser(identifier, updateData);
+  const { user, wasUpdated } = await userService.updateUser(
+    identifier,
+    updateData,
+  );
 
   return resfc({
     res,
     code: 200,
-    data: { user: updatedUser },
-    message: 'Usuário atualizado com sucesso',
+    data: { user },
+    message: wasUpdated
+      ? 'Usuário atualizado com sucesso'
+      : 'Nenhuma alteração necessária para este usuário',
   });
 });
 
@@ -53,13 +58,18 @@ export const getMe = catchAsync(async (req, res, next) => {
 });
 
 export const updateMe = catchAsync(async (req, res) => {
-  const updatedUser = await userService.updateUser(req.user.id, req.body);
+  const { user, wasUpdated } = await userService.updateUser(
+    req.user.id,
+    req.body,
+  );
 
   return resfc({
     res,
     code: 200,
-    data: { user: updatedUser },
-    message: 'Seu perfil foi atualizado com sucesso',
+    data: { user },
+    message: wasUpdated
+      ? 'Perfil atualizado com sucesso!'
+      : 'Nenhuma alteração detectada. Os dados já estão atualizados.',
   });
 });
 
