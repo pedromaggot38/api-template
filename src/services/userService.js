@@ -1,6 +1,7 @@
 import db from '../config/db.js';
 import AppError from '../utils/appError.js';
 import { parseUserIdentifier } from '../utils/controllers/userUtils.js';
+import bcrypt from 'bcryptjs';
 
 const findUserOrThrow = async (identifier) => {
   const where = parseUserIdentifier(identifier);
@@ -74,5 +75,30 @@ export const updateUser = async (identifier, data) => {
   return await db.user.update({
     where,
     data,
+  });
+};
+
+export const updateMyPassword = async (
+  userId,
+  currentPassword,
+  newPassword,
+) => {
+  const user = await findUserOrThrow(userId);
+
+  const isPasswordCorrect = await bcrypt.compare(
+    currentPassword,
+    user.password,
+  );
+
+  if (!isPasswordCorrect) {
+    throw new AppError('A senha atual está incorreta', 401);
+  }
+
+  return await db.user.update({
+    where: { id: userId },
+    data: {
+      password: newPassword,
+      passwordChangedAt: new Date(),
+    },
   });
 };

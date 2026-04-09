@@ -40,3 +40,37 @@ export const update = catchAsync(async (req, res) => {
     message: 'Usuário atualizado com sucesso',
   });
 });
+
+export const getMe = catchAsync(async (req, res, next) => {
+  const user = await userService.getUserByIdentifier(req.user.id);
+
+  return resfc({
+    res,
+    code: 200,
+    data: { user },
+    message: 'Perfil recuperado com sucesso',
+  });
+});
+
+export const updateMe = catchAsync(async (req, res) => {
+  const updatedUser = await userService.updateUser(req.user.id, req.body);
+
+  return resfc({
+    res,
+    code: 200,
+    data: { user: updatedUser },
+    message: 'Seu perfil foi atualizado com sucesso',
+  });
+});
+
+export const updateMyPassword = catchAsync(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  await userService.updateMyPassword(req.user.id, currentPassword, newPassword);
+
+  return resfc({
+    res,
+    code: 200,
+    message: 'Senha alterada com sucesso!',
+  });
+});

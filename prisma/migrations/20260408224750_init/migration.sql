@@ -1,3 +1,9 @@
+-- CreateExtension
+CREATE EXTENSION IF NOT EXISTS "citext";
+
+-- CreateEnum
+CREATE TYPE "UserStatus" AS ENUM ('pending', 'active', 'banned', 'deactivated');
+
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('user', 'admin', 'root');
 
@@ -5,10 +11,15 @@ CREATE TYPE "Role" AS ENUM ('user', 'admin', 'root');
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "username" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
+    "username" CITEXT NOT NULL,
+    "email" CITEXT NOT NULL,
     "password" TEXT NOT NULL,
     "role" "Role" NOT NULL DEFAULT 'user',
+    "status" "UserStatus" NOT NULL DEFAULT 'pending',
+    "avatar" TEXT,
+    "phone" TEXT,
+    "lastLogin" TIMESTAMP(3),
+    "passwordChangedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

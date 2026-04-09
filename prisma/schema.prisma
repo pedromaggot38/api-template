@@ -28,16 +28,15 @@ model User {
   username String     @unique @db.Citext
   email    String     @unique @db.Citext
   password String
+  avatar   String?
+  phone    String?
   role     Role       @default(user)
   status   UserStatus @default(pending)
 
-  // avatar   String?
-  // phone    String?
-  // lastLogin         DateTime?
-  // passwordChangedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  lastLogin         DateTime?
+  passwordChangedAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@index([id, username])
   @@map("users")

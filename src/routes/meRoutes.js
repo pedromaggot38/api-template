@@ -14,8 +14,7 @@ router.use(protect);
 router
   .route('/')
   .get(userController.getMe)
-  .patch(validate(updateMeSchema), userController.updateMe)
-  .delete(userController.deleteMe);
+  .patch(validate(updateMeSchema), userController.updateMe);
 
 router.patch(
   '/password',

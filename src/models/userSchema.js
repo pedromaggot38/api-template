@@ -8,29 +8,30 @@ export const identifierParamSchema = z.object({
   identifier: z.string().min(3, 'Identificador inválido (UUID ou Username)'),
 });
 
-export const registerSchema = z
-  .object({
-    name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres'),
-    username: z
-      .string()
-      .min(3, 'O username deve ter pelo menos 3 caracteres')
-      .max(20, 'O username deve ter no máximo 20 caracteres')
-      .transform(normalizeInput),
-    email: z
-      .string()
-      .email('Formato de e-mail inválido')
-      .transform(normalizeInput),
-    password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
-    passwordConfirm: z.string(),
-    /*
-    avatar: z.string().url('URL do avatar inválida').optional(),
-    phone: z.string().optional(),
-    */
-  })
-  .refine((data) => data.password === data.passwordConfirm, {
+const userBaseFields = z.object({
+  name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres'),
+  username: z
+    .string()
+    .min(3, 'O username deve ter pelo menos 3 caracteres')
+    .max(20, 'O username deve ter no máximo 20 caracteres')
+    .transform(normalizeInput),
+  email: z
+    .string()
+    .email('Formato de e-mail inválido')
+    .transform(normalizeInput),
+  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+  passwordConfirm: z.string(),
+  avatar: z.string().url('URL do avatar inválida').optional().or(z.literal('')),
+  phone: z.string().min(10, 'Telefone inválido').optional(),
+});
+
+export const registerSchema = userBaseFields.refine(
+  (data) => data.password === data.passwordConfirm,
+  {
     message: 'As senhas não coincidem',
     path: ['passwordConfirm'],
-  });
+  },
+);
 
 export const loginSchema = z.object({
   username: z
@@ -40,11 +41,13 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Senha é obrigatória'),
 });
 
-export const updateUserSchema = registerSchema
+export const updateUserSchema = userBaseFields
   .pick({
     name: true,
     username: true,
     email: true,
+    avatar: true,
+    phone: true,
   })
   .extend({
     role: UserRole.optional(),
@@ -52,11 +55,13 @@ export const updateUserSchema = registerSchema
   })
   .partial();
 
-export const updateMeSchema = registerSchema
+export const updateMeSchema = userBaseFields
   .pick({
     name: true,
     email: true,
     username: true,
+    avatar: true,
+    phone: true,
   })
   .partial()
   .refine((data) => Object.keys(data).length > 0, 'Envie ao menos um campo');

@@ -21,7 +21,7 @@ export const authenticate = async (username, password) => {
 
   const allowedStatuses = ['active', 'pending'];
 
-  if (user.status !== 'active') {
+  if (!allowedStatuses.includes(user.status)) {
     const messages = {
       banned: 'Sua conta foi banida por violação dos termos.',
       pending: 'Por favor, confirme seu e-mail para acessar.',
