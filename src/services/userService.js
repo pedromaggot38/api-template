@@ -25,7 +25,25 @@ export const findAllUsers = async (options = {}) => {
     sortOrder = 'desc',
   } = options;
 
-  const skip = (page - 1) * limit;
+  const allowedSortFields = [
+    'createdAt',
+    'name',
+    'username',
+    'email',
+    'status',
+    'role',
+  ];
+  const validatedSortBy = allowedSortFields.includes(sortBy)
+    ? sortBy
+    : 'createdAt';
+  const validatedSortOrder = ['asc', 'desc'].includes(sortOrder.toLowerCase())
+    ? sortOrder.toLowerCase()
+    : 'desc';
+
+  const validatedLimit = Math.max(1, Number(limit));
+  const validatedPage = Math.max(1, Number(page));
+  const skip = (validatedPage - 1) * validatedLimit;
+
   const where = {};
 
   if (role) {
@@ -46,9 +64,9 @@ export const findAllUsers = async (options = {}) => {
   const [users, total] = await Promise.all([
     db.user.findMany({
       where,
-      skip: Number(skip),
-      take: Number(limit),
-      orderBy: { [sortBy]: sortOrder },
+      skip,
+      take: validatedLimit,
+      orderBy: { [validatedSortBy]: validatedSortOrder },
     }),
     db.user.count({ where }),
   ]);
@@ -57,9 +75,9 @@ export const findAllUsers = async (options = {}) => {
     users,
     pagination: {
       total,
-      page: Number(page),
-      limit: Number(limit),
-      totalPages: Math.ceil(total / limit),
+      page: validatedPage,
+      limit: validatedLimit,
+      totalPages: Math.ceil(total / validatedLimit),
     },
   };
 };

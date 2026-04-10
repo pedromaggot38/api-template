@@ -20,18 +20,13 @@ export const createSendToken = (user, statusCode, res) => {
     httpOnly: true,
     path: '/',
     sameSite: 'Strict',
+    secure: process.env.NODE_ENV === 'production',
   };
-
-  if (process.env.NODE_ENV === 'production') {
-    cookieOptions.secure = true;
-  }
 
   res.cookie('jwt', token, cookieOptions);
 
   const userResponse = { ...user };
   delete userResponse.password;
-  // Se tiver o campo isActive ou outros internos, pode remover aqui também
-  // delete userResponse.isActive;
 
   return resfc({
     res,
@@ -46,6 +41,6 @@ export const clearLogoutCookie = (res) => {
     httpOnly: true,
     path: '/',
     sameSite: 'Strict',
-    // secure: true // Ative se estiver em produção
+    secure: process.env.NODE_ENV === 'production',
   });
 };

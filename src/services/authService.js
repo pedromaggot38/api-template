@@ -6,6 +6,7 @@ export const register = async (userData, ip) => {
   const newUser = await db.user.create({
     data: {
       ...userData,
+      passwordChangedAt: null,
       lastLogin: new Date(),
       lastLoginIp: ip,
     },
