@@ -35,15 +35,14 @@ export const update = catchAsync(async (req, res) => {
     identifier,
     updateData,
     req.user.role,
+    req.user.id,
   );
 
   return resfc({
     res,
     code: 200,
     data: { user },
-    message: wasUpdated
-      ? 'Usuário atualizado com sucesso'
-      : 'Nenhuma alteração necessária para este usuário',
+    message: wasUpdated ? 'Usuário atualizado com sucesso!' : 'Sem alterações.',
   });
 });
 
@@ -59,18 +58,20 @@ export const getMe = catchAsync(async (req, res, next) => {
 });
 
 export const updateMe = catchAsync(async (req, res) => {
+  const { id: performerId, role: performerRole } = req.user;
+
   const { user, wasUpdated } = await userService.updateUser(
-    req.user.id,
+    performerId,
     req.body,
+    performerRole,
+    performerId,
   );
 
   return resfc({
     res,
     code: 200,
     data: { user },
-    message: wasUpdated
-      ? 'Perfil atualizado com sucesso!'
-      : 'Nenhuma alteração detectada. Os dados já estão atualizados.',
+    message: wasUpdated ? 'Perfil atualizado com sucesso!' : 'Sem alterações.',
   });
 });
 
@@ -83,5 +84,20 @@ export const updateMyPassword = catchAsync(async (req, res) => {
     res,
     code: 200,
     message: 'Senha alterada com sucesso!',
+  });
+});
+
+/**
+ * Remove permanentemente um usuário do sistema
+ * Restrito ao nível Root conforme definido nas rotas e service
+ */
+export const remove = catchAsync(async (req, res, next) => {
+  const { identifier } = req.params;
+
+  await userService.deleteUser(identifier, req.user.role);
+
+  return res.status(204).json({
+    status: 'success',
+    data: null,
   });
 });

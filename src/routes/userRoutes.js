@@ -15,6 +15,7 @@ router.route('/').get(userController.getAllUsers);
 router
   .route('/:identifier')
   .get(userController.getUser)
-  .patch(validate(updateUserSchema), userController.update);
+  .patch(validate(updateUserSchema), userController.update)
+  .delete(restrictTo('root'), userController.remove);
 
 export default router;

@@ -89,10 +89,17 @@ export const getUserByIdentifier = async (identifier) => {
   return await findUserOrThrow(identifier);
 };
 
-export const updateUser = async (identifier, data, performerRole) => {
+export const updateUser = async (
+  identifier,
+  data,
+  performerRole,
+  performerId,
+) => {
   const currentUser = await findUserOrThrow(identifier);
 
-  validateRoleHierarchy(performerRole, currentUser.role);
+  if (currentUser.id !== performerId) {
+    validateRoleHierarchy(performerRole, currentUser.role);
+  }
 
   const changes = {};
   Object.keys(data).forEach((key) => {
@@ -114,6 +121,30 @@ export const updateUser = async (identifier, data, performerRole) => {
   });
 
   return { user: updatedUser, wasUpdated: true };
+};
+
+export const deleteUser = async (identifier, performerRole) => {
+  const targetUser = await findUserOrThrow(identifier);
+
+  if (performerRole !== 'root') {
+    throw new AppError(
+      'Apenas o nível Root pode apagar registros permanentemente.',
+      403,
+    );
+  }
+
+  if (targetUser.role === 'root') {
+    throw new AppError(
+      'Não é permitido remover usuários com nível de acesso Root.',
+      403,
+    );
+  }
+
+  validateRoleHierarchy(performerRole, targetUser.role);
+
+  return await db.user.delete({
+    where: { id: targetUser.id },
+  });
 };
 
 export const updateMyPassword = async (
