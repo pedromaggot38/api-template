@@ -1,6 +1,9 @@
 import db from '../config/db.js';
 import AppError from '../utils/appError.js';
-import { parseUserIdentifier } from '../utils/controllers/userUtils.js';
+import {
+  parseUserIdentifier,
+  validateRoleHierarchy,
+} from '../utils/controllers/userUtils.js';
 import bcrypt from 'bcryptjs';
 
 const findUserOrThrow = async (identifier) => {
@@ -86,10 +89,12 @@ export const getUserByIdentifier = async (identifier) => {
   return await findUserOrThrow(identifier);
 };
 
-export const updateUser = async (identifier, data) => {
+export const updateUser = async (identifier, data, performerRole) => {
   const currentUser = await findUserOrThrow(identifier);
-  const changes = {};
 
+  validateRoleHierarchy(performerRole, currentUser.role);
+
+  const changes = {};
   Object.keys(data).forEach((key) => {
     if (data[key] !== undefined && data[key] !== currentUser[key]) {
       changes[key] = data[key];

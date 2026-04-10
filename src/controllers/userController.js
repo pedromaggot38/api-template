@@ -34,6 +34,7 @@ export const update = catchAsync(async (req, res) => {
   const { user, wasUpdated } = await userService.updateUser(
     identifier,
     updateData,
+    req.user.role,
   );
 
   return resfc({

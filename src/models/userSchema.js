@@ -4,6 +4,7 @@ const UserRole = z.enum(['user', 'admin', 'root']);
 const UserStatus = z.enum(['pending', 'active', 'banned', 'deactivated']);
 
 const normalizeInput = (val) => val.trim().toLowerCase();
+
 export const identifierParamSchema = z.object({
   identifier: z.string().min(3, 'Identificador inválido (UUID ou Username)'),
 });
@@ -19,7 +20,7 @@ const userBaseFields = z.object({
     .string()
     .email('Formato de e-mail inválido')
     .transform(normalizeInput),
-  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+  password: z.string().min(4, 'A senha deve ter pelo menos 4 caracteres'),
   passwordConfirm: z.string(),
   avatar: z.string().url('URL do avatar inválida').optional().or(z.literal('')),
   phone: z.string().min(10, 'Telefone inválido').optional(),
@@ -71,7 +72,7 @@ export const updateMyPasswordSchema = z
     currentPassword: z.string().min(1, 'Senha atual é obrigatória'),
     newPassword: z
       .string()
-      .min(6, 'A nova senha deve ter pelo menos 6 caracteres'),
+      .min(4, 'A nova senha deve ter pelo menos 4 caracteres'),
     passwordConfirm: z.string(),
   })
   .refine((data) => data.newPassword === data.passwordConfirm, {
