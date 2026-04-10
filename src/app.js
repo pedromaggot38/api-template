@@ -15,6 +15,7 @@ app.use(
   }),
 );
 
+app.set('trust proxy', true);
 app.use(hpp());
 
 const corsOptions = {

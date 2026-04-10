@@ -2,18 +2,20 @@ import db from '../config/db.js';
 import bcrypt from 'bcryptjs';
 import AppError from '../utils/appError.js';
 
-export const register = async (userData) => {
+export const register = async (userData, ip) => {
   const newUser = await db.user.create({
-    data: userData,
+    data: {
+      ...userData,
+      lastLogin: new Date(),
+      lastLoginIp: ip,
+    },
   });
 
   return { user: newUser };
 };
 
-export const authenticate = async (username, password) => {
-  const user = await db.user.findUnique({
-    where: { username },
-  });
+export const authenticate = async (username, password, ip) => {
+  const user = await db.user.findUnique({ where: { username } });
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
     throw new AppError('Username ou password incorretos', 401);
@@ -31,5 +33,10 @@ export const authenticate = async (username, password) => {
     throw new Error(messages[user.status] || 'Acesso negado.');
   }
 
-  return { user };
+  const updatedUser = await db.user.update({
+    where: { id: user.id },
+    data: { lastLogin: new Date(), lastLoginIp: ip },
+  });
+
+  return { user: updatedUser };
 };
