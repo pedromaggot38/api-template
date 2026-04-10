@@ -6,6 +6,7 @@ import routes from './routes/index.js';
 import cookieParser from 'cookie-parser';
 import AppError from './utils/appError.js';
 import errorHandler from './middlewares/errorHandler.js';
+import { apiLimiter } from './middlewares/rateLimiter.js';
 
 const app = express();
 
@@ -22,12 +23,14 @@ const corsOptions = {
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, // Ative para suportar cookies HttpOnly
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
+
+app.use('/api/v1', apiLimiter);
 
 app.use('/api/v1', routes);
 
