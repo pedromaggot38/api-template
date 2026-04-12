@@ -1,4 +1,5 @@
 import { ZodError } from 'zod';
+import logger from '../utils/logger.js';
 import AppError from '../utils/appError.js';
 
 const translateModel = (modelName) => {
@@ -81,7 +82,11 @@ const sendErrorProd = (err, res) => {
       errors: err.errors || [],
     });
   } else {
-    console.error('CRITICAL ERROR 💥:', err);
+    logger.error('CRITICAL ERROR 💥', { 
+      message: err.message,
+      stack: err.stack,
+      name: err.name 
+    });
     res.status(500).json({
       status: 'error',
       message: 'Ocorreu um erro interno no servidor.',
@@ -113,6 +118,14 @@ export default (err, req, res, next) => {
   err.status = err.status || 'error';
 
   const enrichedError = enrichError(err);
+
+  if (enrichedError.isOperational) {
+    logger.warn(`Operational Error: ${enrichedError.message}`, {
+      path: req.originalUrl,
+      method: req.method,
+      statusCode: enrichedError.statusCode
+    });
+  }
 
   if (process.env.NODE_ENV === 'development') {
     return sendErrorDev(err, enrichedError, res);
