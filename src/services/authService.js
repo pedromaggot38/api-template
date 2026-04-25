@@ -31,7 +31,7 @@ export const authenticate = async (username, password, ip) => {
       deactivated: 'Esta conta foi desativada.',
     };
 
-    throw new Error(messages[user.status] || 'Acesso negado.');
+    throw new AppError(messages[user.status] || 'Acesso negado.');
   }
 
   const updatedUser = await db.user.update({
