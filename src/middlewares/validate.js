@@ -4,7 +4,12 @@ const validate =
     try {
       const parsedData = schema.parse(req[target]);
 
-      req[target] = parsedData;
+      if (target === 'query' || target === 'params') {
+        Object.keys(req[target]).forEach((key) => delete req[target][key]);
+        Object.assign(req[target], parsedData);
+      } else {
+        req[target] = parsedData;
+      }
 
       next();
     } catch (error) {
