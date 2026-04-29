@@ -79,3 +79,25 @@ export const updateMyPasswordSchema = z
     message: 'As senhas não coincidem',
     path: ['passwordConfirm'],
   });
+
+export const verifyOtpSchema = z.object({
+  token: z.string().length(6, 'O código deve ter exatamente 6 dígitos').trim(),
+});
+
+export const forgotPasswordSchema = userBaseFields.pick({
+  email: true,
+});
+
+export const resetPasswordSchema = z
+  .object({
+    token: z
+      .string()
+      .length(6, 'O código deve ter exatamente 6 dígitos')
+      .trim(),
+    password: userBaseFields.shape.password,
+    passwordConfirm: userBaseFields.shape.passwordConfirm,
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: 'As senhas não coincidem',
+    path: ['passwordConfirm'],
+  });

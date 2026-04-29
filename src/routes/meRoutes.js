@@ -5,6 +5,7 @@ import validate from '../middlewares/validate.js';
 import {
   updateMeSchema,
   updateMyPasswordSchema,
+  verifyOtpSchema,
 } from '../models/userSchema.js';
 
 const router = express.Router();
@@ -20,6 +21,13 @@ router.patch(
   '/password',
   validate(updateMyPasswordSchema),
   userController.updateMyPassword,
+);
+
+router.post('/request-token', userController.requestAccountVerification);
+router.post(
+  '/verify-token',
+  validate(verifyOtpSchema),
+  userController.verifyAccount,
 );
 
 export default router;

@@ -96,8 +96,33 @@ export const remove = catchAsync(async (req, res, next) => {
 
   await userService.deleteUser(identifier, req.user.role);
 
-  return res.status(204).json({
-    status: 'success',
-    data: null,
+  return resfc({
+    res,
+    code: 204,
+  });
+});
+
+export const requestAccountVerification = catchAsync(async (req, res) => {
+  await userService.generateAndSendOtp(req.user.id, 'ACCOUNT_VERIFICATION');
+
+  return resfc({
+    res,
+    code: 200,
+    message: 'Um novo código de verificação foi enviado para o seu e-mail.',
+  });
+});
+
+export const verifyAccount = catchAsync(async (req, res) => {
+  const { token } = req.body;
+  const { user, message } = await userService.verifyVerificationUserCode(
+    req.user.id,
+    token,
+  );
+
+  resfc({
+    res,
+    code: 200,
+    data: { user },
+    message,
   });
 });

@@ -5,6 +5,10 @@ import {
   validateRoleHierarchy,
 } from '../utils/controllers/userUtils.js';
 import bcrypt from 'bcryptjs';
+import { generateOtp } from '../utils/generateOtp.js';
+import { sendEmail } from '../utils/emailService.js';
+import { emailTemplates } from '../templates/emailTemplates.js';
+import logger from '../utils/logger.js';
 
 const findUserOrThrow = async (identifier) => {
   const where = parseUserIdentifier(identifier);
@@ -176,4 +180,89 @@ export const updateMyPassword = async (
       passwordChangedAt: new Date(),
     },
   });
+};
+
+export const generateAndSendOtp = async (userId, reason) => {
+  const user = await findUserOrThrow(userId);
+  const otp = generateOtp();
+
+  let expires;
+  const updateData = {};
+
+  if (reason === 'ACCOUNT_VERIFICATION') {
+    expires = new Date(Date.now() + 10 * 60 * 1000);
+    updateData.verifyToken = otp;
+    updateData.verifyExpires = expires;
+  } else if (reason === 'PASSWORD_RECOVERY') {
+    expires = new Date(Date.now() + 5 * 60 * 1000);
+    updateData.resetToken = otp;
+    updateData.resetExpires = expires;
+  }
+
+  await db.user.update({
+    where: { id: userId },
+    data: updateData,
+  });
+
+  const { subject, html } = emailTemplates[reason]({
+    token: otp,
+    name: user.name,
+  });
+
+  console.log(otp);
+
+  if (reason === 'PASSWORD_RECOVERY') {
+    try {
+      await sendEmail({ to: user.email, subject, html });
+    } catch (error) {
+      logger.error(`Erro crítico no reset de senha para ${user.email}:`, error);
+      throw new AppError(
+        'Erro ao enviar e-mail de recuperação. Tente novamente.',
+        500,
+      );
+    }
+  } else {
+    sendEmail({ to: user.email, subject, html }).catch((err) => {
+      logger.error(
+        `Falha silenciosa no e-mail de verificação (${user.email}):`,
+        err,
+      );
+    });
+  }
+
+  return true;
+};
+
+export const verifyVerificationUserCode = async (userId, token) => {
+  const user = await findUserOrThrow(userId);
+
+  if (
+    !user.verifyToken ||
+    user.verifyToken !== token ||
+    user.verifyExpires < new Date()
+  ) {
+    throw new AppError('Código de verificação inválido ou expirado', 400);
+  }
+
+  const updateData = {
+    isVerified: true,
+    verifyToken: null,
+    verifyExpires: null,
+    status: 'active',
+  };
+
+  let message = 'Conta verificada com sucesso!';
+
+  if (user.newEmail) {
+    updateData.email = user.newEmail;
+    updateData.newEmail = null;
+    message = 'E-mail atualizado e verificado com sucesso!';
+  }
+
+  const updatedUser = await db.user.update({
+    where: { id: user.id },
+    data: updateData,
+  });
+
+  return { user: updatedUser, message };
 };

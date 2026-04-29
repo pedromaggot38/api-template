@@ -23,15 +23,22 @@ enum Role {
 }
 
 model User {
-  id       String     @id @default(uuid())
-  name     String
-  username String     @unique @db.Citext
-  email    String     @unique @db.Citext
-  password String
-  avatar   String?
-  phone    String?
-  role     Role       @default(user)
-  status   UserStatus @default(pending)
+  id            String    @id @default(uuid())
+  name          String
+  username      String    @unique @db.Citext
+  email         String    @unique @db.Citext
+  isVerified    Boolean   @default(false)
+  verifyToken   String?
+  verifyExpires DateTime?
+  newEmail      String?
+  password      String
+  resetExpires  DateTime?
+  resetToken    String?
+
+  avatar String?
+  phone  String?
+  role   Role       @default(user)
+  status UserStatus @default(pending)
 
   lastLogin         DateTime?
   lastLoginIp       String?
