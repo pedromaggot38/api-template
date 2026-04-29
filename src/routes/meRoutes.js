@@ -30,4 +30,7 @@ router.post(
   userController.verifyAccount,
 );
 
+router.post('/change-email/request', userController.requestEmailChange);
+router.post('/change-email/verify', userController.verifyEmailChange);
+
 export default router;

@@ -23,17 +23,19 @@ enum Role {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  name          String
-  username      String    @unique @db.Citext
-  email         String    @unique @db.Citext
-  isVerified    Boolean   @default(false)
-  verifyToken   String?
-  verifyExpires DateTime?
-  newEmail      String?
-  password      String
-  resetExpires  DateTime?
-  resetToken    String?
+  id                 String    @id @default(uuid())
+  name               String
+  username           String    @unique @db.Citext
+  email              String    @unique @db.Citext
+  newEmail           String?
+  changeEmailToken   String?
+  changeEmailExpires DateTime?
+  isVerified         Boolean   @default(false)
+  verifyToken        String?
+  verifyExpires      DateTime?
+  password           String
+  resetToken         String?
+  resetExpires       DateTime?
 
   avatar String?
   phone  String?

@@ -126,3 +126,40 @@ export const verifyAccount = catchAsync(async (req, res) => {
     message,
   });
 });
+
+export const requestEmailChange = catchAsync(async (req, res) => {
+  const { newEmail } = req.body;
+
+  const emailExists =
+    await userService.findUserByAnyIdentifierWithoutError(newEmail);
+  if (emailExists) {
+    throw new AppError('Este e-mail já está em uso por outro usuário.', 400);
+  }
+
+  await userService.generateAndSendOtp(req.user.id, 'EMAIL_CHANGE', {
+    newEmail,
+  });
+
+  return resfc({
+    res,
+    code: 200,
+    message: `Código de confirmação enviado para ${newEmail}.`,
+  });
+});
+
+export const verifyEmailChange = catchAsync(async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    throw new AppError('O código de confirmação é obrigatório.', 400);
+  }
+
+  const updatedUser = await userService.confirmEmailChange(req.user.id, token);
+
+  return resfc({
+    res,
+    code: 200,
+    message: 'E-mail atualizado com sucesso!',
+    data: { email: updatedUser.email },
+  });
+});

@@ -190,7 +190,7 @@ export const updateMyPassword = async (
   });
 };
 
-export const generateAndSendOtp = async (userId, reason) => {
+export const generateAndSendOtp = async (userId, reason, options = {}) => {
   const user = await findUserOrThrow(userId);
   const otp = generateOtp();
 
@@ -207,10 +207,22 @@ export const generateAndSendOtp = async (userId, reason) => {
     updateData.resetExpires = expires;
   }
 
+  if (reason === 'EMAIL_CHANGE') {
+    if (!options.newEmail) {
+      throw new AppError('O novo e-mail é obrigatório para este fluxo.', 400);
+    }
+    expires = new Date(Date.now() + 10 * 60 * 1000);
+    updateData.changeEmailToken = otp;
+    updateData.changeEmailExpires = expires;
+    updateData.newEmail = options.newEmail;
+  }
+
   await db.user.update({
     where: { id: userId },
     data: updateData,
   });
+
+  const targetEmail = reason === 'EMAIL_CHANGE' ? options.newEmail : user.email;
 
   const { subject, html } = emailTemplates[reason]({
     token: otp,
@@ -221,20 +233,14 @@ export const generateAndSendOtp = async (userId, reason) => {
 
   if (reason === 'PASSWORD_RECOVERY') {
     try {
-      await sendEmail({ to: user.email, subject, html });
+      await sendEmail({ to: targetEmail, subject, html });
     } catch (error) {
-      logger.error(`Erro crítico no reset de senha para ${user.email}:`, error);
-      throw new AppError(
-        'Erro ao enviar e-mail de recuperação. Tente novamente.',
-        500,
-      );
+      logger.error(`Erro crítico no envio para ${targetEmail}:`, error);
+      throw new AppError('Erro ao enviar e-mail. Tente novamente.', 500);
     }
   } else {
-    sendEmail({ to: user.email, subject, html }).catch((err) => {
-      logger.error(
-        `Falha silenciosa no e-mail de verificação (${user.email}):`,
-        err,
-      );
+    sendEmail({ to: targetEmail, subject, html }).catch((err) => {
+      logger.error(`Falha silenciosa no e-mail para (${targetEmail}):`, err);
     });
   }
 
@@ -294,6 +300,28 @@ export const resetUserPassword = async ({ identifier, token, password }) => {
       resetToken: null,
       resetExpires: null,
       passwordChangedAt: new Date(),
+    },
+  });
+};
+
+export const confirmEmailChange = async (userId, token) => {
+  const user = await findUserOrThrow(userId);
+
+  if (
+    !user.changeEmailToken ||
+    user.changeEmailToken !== token ||
+    user.changeEmailExpires < new Date()
+  ) {
+    throw new AppError('Código de confirmação inválido ou expirado.', 400);
+  }
+
+  return await db.user.update({
+    where: { id: userId },
+    data: {
+      email: user.newEmail,
+      newEmail: null,
+      changeEmailToken: null,
+      changeEmailExpires: null,
     },
   });
 };
