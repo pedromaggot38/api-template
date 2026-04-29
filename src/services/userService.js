@@ -320,6 +320,10 @@ export const confirmEmailChange = async (userId, token) => {
     data: {
       email: user.newEmail,
       newEmail: null,
+      status: 'active',
+      isVerified: true,
+      verifyToken: null,
+      verifyExpires: null,
       changeEmailToken: null,
       changeEmailExpires: null,
     },
