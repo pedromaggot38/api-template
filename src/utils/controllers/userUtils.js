@@ -1,21 +1,25 @@
 import AppError from '../appError.js';
 
 /**
- * Transforma um identificador (UUID ou Username) em um objeto 'where' do Prisma
+ * Transforma um identificador (UUID, Username ou E-mail) em um objeto 'where' do Prisma
  * @param {string} identifier - O ID ou Username do usuário
  * @returns {Object} Objeto formatado para a cláusula 'where'
  */
 export const parseUserIdentifier = (identifier) => {
   if (!identifier) return {};
 
+  const idTrimmed = identifier.trim();
+
   const isUUID =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-      identifier,
+      idTrimmed,
     );
+  if (isUUID) return { id: idTrimmed };
 
-  return isUUID
-    ? { id: identifier }
-    : { username: identifier.trim().toLowerCase() };
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(idTrimmed);
+  if (isEmail) return { email: idTrimmed.toLowerCase() };
+
+  return { username: idTrimmed.toLowerCase() };
 };
 
 /**

@@ -84,12 +84,19 @@ export const verifyOtpSchema = z.object({
   token: z.string().length(6, 'O código deve ter exatamente 6 dígitos').trim(),
 });
 
-export const forgotPasswordSchema = userBaseFields.pick({
-  email: true,
+export const forgotPasswordSchema = z.object({
+  identifier: z
+    .string({ required_error: 'E-mail ou usuário é obrigatório' })
+    .trim()
+    .min(1, 'O identificador não pode estar vazio'),
 });
 
 export const resetPasswordSchema = z
   .object({
+    identifier: z
+      .string({ required_error: 'O identificador é necessário' })
+      .trim()
+      .min(1),
     token: z
       .string()
       .length(6, 'O código deve ter exatamente 6 dígitos')

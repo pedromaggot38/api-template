@@ -17,7 +17,7 @@ export const getAllUsers = catchAsync(async (req, res, next) => {
 export const getUser = catchAsync(async (req, res, next) => {
   const { identifier } = req.params;
 
-  const user = await userService.getUserByIdentifier(identifier);
+  const user = await userService.findUserByAnyIdentifier(identifier);
 
   return resfc({
     res,
@@ -47,7 +47,7 @@ export const update = catchAsync(async (req, res) => {
 });
 
 export const getMe = catchAsync(async (req, res, next) => {
-  const user = await userService.getUserByIdentifier(req.user.id);
+  const user = await userService.findUserByAnyIdentifier(req.user.id);
 
   return resfc({
     res,

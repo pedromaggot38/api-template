@@ -1,6 +1,11 @@
 import express from 'express';
 import validate from '../middlewares/validate.js';
-import { loginSchema, registerSchema } from '../models/userSchema.js';
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+} from '../models/userSchema.js';
 import * as authController from '../controllers/authController.js';
 import { authLimiter } from '../middlewares/rateLimiter.js';
 
@@ -19,5 +24,17 @@ router.post(
   authController.signin,
 );
 router.get('/signout', authController.signout);
+
+router.post(
+  '/forgot-password',
+  authLimiter,
+  validate(forgotPasswordSchema),
+  authController.forgotPassword,
+);
+router.post(
+  '/reset-password',
+  validate(resetPasswordSchema),
+  authController.resetPassword,
+);
 
 export default router;

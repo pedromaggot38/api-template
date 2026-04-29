@@ -20,7 +20,7 @@ export const apiLimiter = createOptionalLimiter({
 
 export const authLimiter = createOptionalLimiter({
   windowMs: 60 * 60 * 1000,
-  limit: 15,
+  limit: 8,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   handler: (req, res, next) => {

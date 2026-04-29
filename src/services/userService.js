@@ -89,8 +89,16 @@ export const findAllUsers = async (options = {}) => {
   };
 };
 
-export const getUserByIdentifier = async (identifier) => {
+export const findUserByAnyIdentifier = async (identifier) => {
   return await findUserOrThrow(identifier);
+};
+
+// Usado na rota de Esqueci Minha Senha
+export const findUserByAnyIdentifierWithoutError = async (identifier) => {
+  const where = parseUserIdentifier(identifier);
+  const user = await db.user.findUnique({ where });
+
+  return user;
 };
 
 export const updateUser = async (
@@ -265,4 +273,27 @@ export const verifyVerificationUserCode = async (userId, token) => {
   });
 
   return { user: updatedUser, message };
+};
+
+export const resetUserPassword = async ({ identifier, token, password }) => {
+  const user = await findUserByAnyIdentifierWithoutError(identifier);
+
+  if (
+    !user ||
+    !user.resetToken ||
+    user.resetToken !== token ||
+    user.resetExpires < new Date()
+  ) {
+    throw new AppError('Código de recuperação inválido ou expirado.', 400);
+  }
+
+  return await db.user.update({
+    where: { id: user.id },
+    data: {
+      password,
+      resetToken: null,
+      resetExpires: null,
+      passwordChangedAt: new Date(),
+    },
+  });
 };
