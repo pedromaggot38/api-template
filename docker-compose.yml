@@ -12,7 +12,7 @@ services:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     #command: tail -f /dev/null
-    command: npm run docker:start
+    command: npm run start:dev
     depends_on:
       db:
         condition: service_healthy

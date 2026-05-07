@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon -L src/server.js",
-    "docker:start": "npx prisma generate && npx prisma migrate dev && npm run dev",
+    "start:dev": "npx prisma generate && npx prisma migrate dev && npm run dev",
     "db:migrate": "npx prisma migrate dev",
     "db:generate": "npx prisma generate",
     "db:reset": "prisma migrate reset --force",
