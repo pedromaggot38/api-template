@@ -13,8 +13,13 @@ const app = express();
 app.use(
   helmet({
     hsts: process.env.NODE_ENV === 'production',
+    contentSecurityPolicy:
+      process.env.NODE_ENV === 'production' ? undefined : false,
+    crossOriginEmbedderPolicy: false,
   }),
 );
+
+app.disable('x-powered-by');
 
 app.set('trust proxy', true);
 app.use(hpp());
