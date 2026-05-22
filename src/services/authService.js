@@ -1,21 +1,53 @@
 import db from '../config/db.js';
 import bcrypt from 'bcryptjs';
 import AppError from '../utils/appError.js';
+import {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshTokenSignature,
+} from '../utils/controllers/tokenUtils.js';
 
-export const register = async (userData, ip) => {
+const createSession = async (userId, clientInfo) => {
+  const accessToken = signAccessToken(userId);
+  const refreshToken = signRefreshToken(userId);
+
+  await db.refreshToken.create({
+    data: {
+      token: refreshToken,
+      userId,
+      device: clientInfo.device,
+      ip: clientInfo.ip,
+      expiresAt: new Date(
+        Date.now() +
+          parseInt(process.env.JWT_REFRESH_COOKIE_EXPIRES_IN, 10) *
+            24 *
+            60 *
+            60 *
+            1000,
+      ),
+    },
+  });
+
+  return { accessToken, refreshToken };
+};
+
+export const register = async (userData, clientInfo) => {
   const newUser = await db.user.create({
     data: {
       ...userData,
       passwordChangedAt: null,
-      lastLogin: new Date(),
-      lastLoginIp: ip,
     },
   });
 
-  return { user: newUser };
+  const { accessToken, refreshToken } = await createSession(
+    newUser.id,
+    clientInfo,
+  );
+
+  return { user: newUser, accessToken, refreshToken };
 };
 
-export const authenticate = async (username, password, ip) => {
+export const authenticate = async (username, password, clientInfo) => {
   const user = await db.user.findUnique({ where: { username } });
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -27,17 +59,66 @@ export const authenticate = async (username, password, ip) => {
   if (!allowedStatuses.includes(user.status)) {
     const messages = {
       banned: 'Sua conta foi banida por violação dos termos.',
-      pending: 'Por favor, confirme seu e-mail para acessar.',
+      // pending: 'Por favor, confirme seu e-mail para acessar.',
       deactivated: 'Esta conta foi desativada.',
     };
 
-    throw new AppError(messages[user.status] || 'Acesso negado.');
+    throw new AppError(messages[user.status] || 'Acesso negado.', 403);
   }
 
-  const updatedUser = await db.user.update({
-    where: { id: user.id },
-    data: { lastLogin: new Date(), lastLoginIp: ip },
+  const { accessToken, refreshToken } = await createSession(
+    user.id,
+    clientInfo,
+  );
+
+  return { user, accessToken, refreshToken };
+};
+
+export const refreshSession = async (refreshTokenInput) => {
+  if (!refreshTokenInput) {
+    throw new AppError(
+      'Refresh Token não fornecido. Faça login novamente.',
+      401,
+    );
+  }
+
+  const session = await db.refreshToken.findUnique({
+    where: { token: refreshTokenInput },
+    include: { user: true },
   });
 
-  return { user: updatedUser };
+  if (!session || session.revoked) {
+    throw new AppError(
+      'Sessão inválida ou revogada. Faça login novamente.',
+      401,
+    );
+  }
+
+  if (session.expiresAt < new Date()) {
+    throw new AppError('Sessão expirada. Faça login novamente.', 401);
+  }
+
+  verifyRefreshTokenSignature(refreshTokenInput);
+
+  const newAccessToken = signAccessToken(session.userId);
+
+  return { accessToken: newAccessToken, user: session.user };
+};
+
+export const revokeSession = async (refreshTokenInput) => {
+  if (!refreshTokenInput) return;
+
+  await db.refreshToken.deleteMany({
+    where: { token: refreshTokenInput },
+  });
+};
+
+export const invalidateAllUserSessions = async (userId) => {
+  await db.refreshToken.deleteMany({
+    where: { userId },
+  });
+};
+
+export const generateNewSessionDirectly = async (userId, clientInfo) => {
+  return await createSession(userId, clientInfo);
 };

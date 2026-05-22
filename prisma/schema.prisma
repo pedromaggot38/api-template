@@ -22,6 +22,21 @@ enum Role {
   root
 }
 
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device    String?
+  ip        String?
+  revoked   Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
 model User {
   id                 String    @id @default(uuid())
   name               String
@@ -42,11 +57,11 @@ model User {
   role   Role       @default(user)
   status UserStatus @default(pending)
 
-  lastLogin         DateTime?
-  lastLoginIp       String?
   passwordChangedAt DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+
+  refreshTokens RefreshToken[]
 
   @@index([id, username, email])
   @@map("users")

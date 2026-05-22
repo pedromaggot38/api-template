@@ -26,8 +26,6 @@ CREATE TABLE "users" (
     "phone" TEXT,
     "role" "Role" NOT NULL DEFAULT 'user',
     "status" "UserStatus" NOT NULL DEFAULT 'pending',
-    "lastLogin" TIMESTAMP(3),
-    "lastLoginIp" TEXT,
     "passwordChangedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

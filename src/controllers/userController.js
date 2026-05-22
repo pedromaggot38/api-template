@@ -2,6 +2,8 @@ import { resfc } from '../utils/resfc.js';
 import AppError from '../utils/appError.js';
 import catchAsync from '../utils/catchAsync.js';
 import * as userService from '../services/userService.js';
+import * as authService from '../services/authService.js';
+import { setRefreshTokenCookie } from '../utils/controllers/cookieUtils.js';
 
 export const getAllUsers = catchAsync(async (req, res, next) => {
   const { users, pagination } = await userService.findAllUsers(req.query);
@@ -76,25 +78,38 @@ export const updateMe = catchAsync(async (req, res) => {
 });
 
 export const updateMyPassword = catchAsync(async (req, res) => {
+  const clientInfo = {
+    ip: req.ip || req.connection.remoteAddress,
+    device: req.headers['user-agent'] || 'Unknown',
+  };
+
   const { currentPassword, newPassword } = req.body;
 
   await userService.updateMyPassword(req.user.id, currentPassword, newPassword);
+
+  await authService.invalidateAllUserSessions(req.user.id);
+
+  const { accessToken, refreshToken } =
+    await authService.generateNewSessionDirectly(req.user.id, clientInfo);
+
+  setRefreshTokenCookie(res, req, refreshToken);
 
   return resfc({
     res,
     code: 200,
     message: 'Senha alterada com sucesso!',
+    data: { accessToken, refreshToken },
   });
 });
 
-/**
- * Remove permanentemente um usuário do sistema
- * Restrito ao nível Root conforme definido nas rotas e service
- */
 export const remove = catchAsync(async (req, res, next) => {
   const { identifier } = req.params;
 
-  await userService.deleteUser(identifier, req.user.role);
+  const targetUser = await userService.findUserByAnyIdentifier(identifier);
+
+  await authService.invalidateAllUserSessions(targetUser.id);
+
+  await userService.deleteUser(targetUser.id, req.user.role);
 
   return resfc({
     res,
@@ -119,7 +134,7 @@ export const verifyAccount = catchAsync(async (req, res) => {
     token,
   );
 
-  resfc({
+  return resfc({
     res,
     code: 200,
     data: { user },

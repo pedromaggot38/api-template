@@ -17,12 +17,16 @@ router.post(
   validate(registerSchema),
   authController.signup,
 );
+
 router.post(
   '/signin',
   authLimiter,
   validate(loginSchema),
   authController.signin,
 );
+
+router.post('/refresh', authController.refresh);
+
 router.get('/signout', authController.signout);
 
 router.post(
@@ -31,6 +35,7 @@ router.post(
   validate(forgotPasswordSchema),
   authController.forgotPassword,
 );
+
 router.post(
   '/reset-password',
   validate(resetPasswordSchema),

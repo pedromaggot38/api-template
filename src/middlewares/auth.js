@@ -11,8 +11,6 @@ export const protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
-  } else if (req.cookies.jwt) {
-    token = req.cookies.jwt;
   }
 
   if (!token) {
@@ -24,7 +22,20 @@ export const protect = catchAsync(async (req, res, next) => {
     );
   }
 
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return next(
+        new AppError(
+          'Seu token de acesso expirou. Por favor, renove sua sessão.',
+          401,
+        ),
+      );
+    }
+    return next(new AppError('Token inválido. Faça login novamente.', 401));
+  }
 
   const currentUser = await db.user.findUnique({
     where: { id: decoded.id },
@@ -66,10 +77,6 @@ export const protect = catchAsync(async (req, res, next) => {
   next();
 });
 
-/**
- * Middleware para restrição por Roles
- * Ex: restrictTo('admin', 'root')
- */
 export const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {

@@ -1,35 +1,83 @@
 import catchAsync from '../utils/catchAsync.js';
 import * as authService from '../services/authService.js';
 import * as userService from '../services/userService.js';
-import {
-  clearLogoutCookie,
-  createSendToken,
-} from '../utils/controllers/authUtils.js';
 import { resfc } from '../utils/resfc.js';
+import {
+  clearRefreshTokenCookie,
+  setRefreshTokenCookie,
+} from '../utils/controllers/cookieUtils.js';
 
 export const signup = catchAsync(async (req, res, next) => {
+  const clientInfo = {
+    ip: req.ip || req.connection.remoteAddress,
+    device: req.headers['user-agent'] || 'Unknown',
+  };
+
   const { passwordConfirm, ...userData } = req.body;
 
-  const { user } = await authService.register(userData, req.ip);
+  const { user, accessToken, refreshToken } = await authService.register(
+    userData,
+    clientInfo,
+  );
 
-  return createSendToken(user, 201, res);
+  setRefreshTokenCookie(res, req, refreshToken);
+
+  return resfc({
+    res,
+    code: 201,
+    data: { user, accessToken, refreshToken },
+  });
 });
 
 export const signin = catchAsync(async (req, res, next) => {
+  const clientInfo = {
+    ip: req.ip || req.connection.remoteAddress,
+    device: req.headers['user-agent'] || 'Unknown',
+  };
+
   const { username, password } = req.body;
 
-  const { user } = await authService.authenticate(username, password, req.ip);
+  const { user, accessToken, refreshToken } = await authService.authenticate(
+    username,
+    password,
+    clientInfo,
+  );
 
-  return createSendToken(user, 200, res);
-});
-
-export const signout = catchAsync(async (req, res, next) => {
-  clearLogoutCookie(res);
+  setRefreshTokenCookie(res, req, refreshToken);
 
   return resfc({
     res,
     code: 200,
-    message: 'Logout realizado com sucesso!',
+    data: { user, accessToken, refreshToken },
+  });
+});
+
+export const signout = catchAsync(async (req, res, next) => {
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+
+  await authService.revokeSession(incomingRefreshToken);
+
+  clearRefreshTokenCookie(res);
+
+  return resfc({
+    res,
+    code: 200,
+    message: 'Sessão encerrada com sucesso.',
+  });
+});
+
+export const refresh = catchAsync(async (req, res, next) => {
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+
+  const { accessToken, user } =
+    await authService.refreshSession(incomingRefreshToken);
+
+  return resfc({
+    res,
+    code: 200,
+    data: { user, accessToken },
   });
 });
 
@@ -45,7 +93,7 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
     await userService.generateAndSendOtp(user.id, 'PASSWORD_RECOVERY');
   }
 
-  resfc({
+  return resfc({
     res,
     code: 200,
     message:
@@ -54,17 +102,30 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
 });
 
 export const resetPassword = catchAsync(async (req, res, next) => {
+  const clientInfo = {
+    ip: req.ip || req.connection.remoteAddress,
+    device: req.headers['user-agent'] || 'Unknown',
+  };
+
   const { identifier, token, password } = req.body;
 
-  await userService.resetUserPassword({
+  const user = await userService.resetUserPassword({
     identifier,
     token,
     password,
   });
 
+  await authService.invalidateAllUserSessions(user.id);
+
+  const { accessToken, refreshToken } =
+    await authService.generateNewSessionDirectly(user.id, clientInfo);
+
+  setRefreshTokenCookie(res, req, refreshToken);
+
   return resfc({
     res,
     code: 200,
     message: 'Senha redefinida com sucesso!',
+    data: { user, accessToken, refreshToken },
   });
 });
