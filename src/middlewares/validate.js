@@ -2,7 +2,9 @@ const validate =
   (schema, target = 'body') =>
   (req, res, next) => {
     try {
-      const parsedData = schema.parse(req[target]);
+      const dataToValidate = req[target] || {};
+
+      const parsedData = schema.parse(dataToValidate);
 
       if (target === 'query' || target === 'params') {
         Object.keys(req[target]).forEach((key) => delete req[target][key]);
@@ -15,7 +17,7 @@ const validate =
     } catch (error) {
       if (error.issues) {
         return res.status(400).json({
-          erros: error.issues.map((err) => ({
+          errors: error.issues.map((err) => ({
             campo: err.path[err.path.length - 1] || 'formulario',
             mensagem: err.message,
           })),

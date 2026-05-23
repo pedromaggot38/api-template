@@ -7,6 +7,7 @@ import {
   updateMyPasswordSchema,
   verifyOtpSchema,
 } from '../models/userSchema.js';
+import { uploadAvatar } from '../config/multer.js';
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ router.use(protect);
 router
   .route('/')
   .get(userController.getMe)
-  .patch(validate(updateMeSchema), userController.updateMe);
+  .patch(uploadAvatar, validate(updateMeSchema), userController.updateMe);
 
 router.patch(
   '/password',

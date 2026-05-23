@@ -4,6 +4,7 @@ import catchAsync from '../utils/catchAsync.js';
 import * as userService from '../services/userService.js';
 import * as authService from '../services/authService.js';
 import { setRefreshTokenCookie } from '../utils/controllers/cookieUtils.js';
+import { deleteFile, getFileUrl } from '../utils/fileUpload.js';
 
 export const getAllUsers = catchAsync(async (req, res, next) => {
   const { users, pagination } = await userService.findAllUsers(req.query);
@@ -59,14 +60,28 @@ export const getMe = catchAsync(async (req, res, next) => {
   });
 });
 
-export const updateMe = catchAsync(async (req, res) => {
-  const { id: performerId, role: performerRole } = req.user;
+export const updateMe = catchAsync(async (req, res, next) => {
+  const currentUser = req.user;
+
+  if (Object.keys(req.body).length === 0 && !req.file) {
+    throw new AppError('Envie ao menos um campo para atualização.', 400);
+  }
+
+  const updateData = { ...req.body };
+
+  if (req.file) {
+    if (currentUser.avatar) {
+      deleteFile(currentUser.avatar);
+    }
+
+    updateData.avatar = getFileUrl(req.file, 'avatars');
+  }
 
   const { user, wasUpdated } = await userService.updateUser(
-    performerId,
-    req.body,
-    performerRole,
-    performerId,
+    currentUser.id,
+    updateData,
+    currentUser.role,
+    currentUser.id,
   );
 
   return resfc({

@@ -77,8 +77,7 @@ export const updateMeSchema = userBaseFields
     avatar: true,
     phone: true,
   })
-  .partial()
-  .refine((data) => Object.keys(data).length > 0, 'Envie ao menos um campo');
+  .partial();
 
 export const updateMyPasswordSchema = z
   .object({
