@@ -68,24 +68,42 @@ export const updateMe = catchAsync(async (req, res, next) => {
   }
 
   const updateData = { ...req.body };
+  let newFileUrl = null;
 
   if (req.file) {
-    if (currentUser.avatar && currentUser.avatar.startsWith('/public/')) {
-      deleteFile(currentUser.avatar);
+    newFileUrl = getFileUrl(req.file, 'avatars');
+    updateData.avatar = newFileUrl;
+  }
+
+  const { user, wasUpdated } = await (async () => {
+    try {
+      return await userService.updateUser(
+        currentUser.id,
+        updateData,
+        currentUser.role,
+        currentUser.id,
+      );
+    } catch (error) {
+      if (newFileUrl) {
+        deleteFile(newFileUrl);
+      }
+      throw error;
     }
-    updateData.avatar = getFileUrl(req.file, 'avatars');
-  } else if (updateData.avatar && updateData.avatar !== currentUser.avatar) {
-    if (currentUser.avatar && currentUser.avatar.startsWith('/public/')) {
+  })();
+
+  if (wasUpdated) {
+    const avatarWasChanged =
+      newFileUrl ||
+      (updateData.avatar && updateData.avatar !== currentUser.avatar);
+
+    if (
+      avatarWasChanged &&
+      currentUser.avatar &&
+      currentUser.avatar.startsWith('/public/')
+    ) {
       deleteFile(currentUser.avatar);
     }
   }
-
-  const { user, wasUpdated } = await userService.updateUser(
-    currentUser.id,
-    updateData,
-    currentUser.role,
-    currentUser.id,
-  );
 
   return resfc({
     res,
