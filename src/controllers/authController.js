@@ -7,6 +7,48 @@ import {
   setRefreshTokenCookie,
 } from '../utils/controllers/cookieUtils.js';
 
+export const checkSystemSetup = catchAsync(async (req, res, next) => {
+  const isInitialized = await userService.hasAnyUser();
+
+  return resfc({
+    res,
+    code: 200,
+    data: {
+      initialized: isInitialized,
+    },
+    message: isInitialized
+      ? 'O sistema já possui um usuário root configurado.'
+      : 'Sistema virgem. Pronto para configuração inicial.',
+  });
+});
+
+export const setupFirstRoot = catchAsync(async (req, res, next) => {
+  const clientInfo = {
+    ip: req.ip || req.connection.remoteAddress,
+    device: req.headers['user-agent'] || 'Unknown',
+  };
+
+  const { passwordConfirm, ...userData } = req.body;
+
+  const rootUser = await userService.createFirstRootUser(userData);
+
+  const { accessToken, refreshToken } =
+    await authService.generateNewSessionDirectly(rootUser.id, clientInfo);
+
+  setRefreshTokenCookie(res, req, refreshToken);
+
+  return resfc({
+    res,
+    code: 201,
+    data: {
+      user: rootUser,
+      accessToken,
+      refreshToken,
+    },
+    message: 'Sistema inicializado com sucesso! Usuário Root criado.',
+  });
+});
+
 export const signup = catchAsync(async (req, res, next) => {
   const clientInfo = {
     ip: req.ip || req.connection.remoteAddress,

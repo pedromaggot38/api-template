@@ -21,6 +21,36 @@ const findUserOrThrow = async (identifier) => {
   return user;
 };
 
+export const hasAnyUser = async () => {
+  const count = await db.user.count();
+  return count > 0;
+};
+
+/**
+ * Cria o primeiro usuário do sistema obrigatoriamente como 'root'
+ * @param {Object} userData - Dados do usuário (username, email, password, etc)
+ */
+export const createFirstRootUser = async (userData) => {
+  const systemHasOwner = await hasAnyUser();
+
+  if (systemHasOwner) {
+    throw new AppError(
+      'O sistema já foi inicializado. Use o fluxo padrão de cadastro.',
+      400,
+    );
+  }
+
+  const firstRoot = await db.user.create({
+    data: {
+      ...userData,
+      role: 'root',
+      passwordChangedAt: null,
+    },
+  });
+
+  return firstRoot;
+};
+
 export const findAllUsers = async (options = {}) => {
   const {
     page = 1,
