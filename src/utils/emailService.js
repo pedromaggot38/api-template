@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import logger from '../utils/logger.js';
+import AppError from './appError.js';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -29,6 +30,10 @@ export const sendEmail = async (options) => {
     return true;
   } catch (error) {
     logger.error('❌ Erro ao enviar e-mail:', error);
-    return false;
+
+    throw new AppError(
+      'Não foi possível enviar o e-mail de confirmação devido a uma instabilidade no nosso servidor de e-mails. Por favor, tente novamente.',
+      503,
+    );
   }
 };

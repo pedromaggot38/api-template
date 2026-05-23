@@ -203,12 +203,6 @@ export const verifyAccount = catchAsync(async (req, res) => {
 export const requestEmailChange = catchAsync(async (req, res) => {
   const { newEmail } = req.body;
 
-  const emailExists =
-    await userService.findUserByAnyIdentifierWithoutError(newEmail);
-  if (emailExists) {
-    throw new AppError('Este e-mail já está em uso por outro usuário.', 400);
-  }
-
   await userService.generateAndSendOtp(req.user.id, 'EMAIL_CHANGE', {
     newEmail,
   });
@@ -216,7 +210,7 @@ export const requestEmailChange = catchAsync(async (req, res) => {
   return resfc({
     res,
     code: 200,
-    message: `Código de confirmação enviado para ${newEmail}.`,
+    message: `Se o e-mail informado for válido e estiver disponível, um código de confirmação será enviado para ele.`,
   });
 });
 

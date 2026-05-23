@@ -223,8 +223,28 @@ export const updateMyPassword = async (
 
 export const generateAndSendOtp = async (userId, reason, options = {}) => {
   const user = await findUserOrThrow(userId);
-  const otp = generateOtp();
 
+  if (reason === 'EMAIL_CHANGE') {
+    if (!options.newEmail) {
+      throw new AppError('O novo e-mail é obrigatório para este fluxo.', 400);
+    }
+
+    if (options.newEmail === user.email) {
+      throw new AppError(
+        'O novo e-mail não pode ser igual ao e-mail atual da sua conta.',
+        400,
+      );
+    }
+
+    const emailExists = await findUserByAnyIdentifierWithoutError(
+      options.newEmail,
+    );
+    if (emailExists) {
+      return true;
+    }
+  }
+
+  const otp = generateOtp();
   let expires;
   const updateData = {};
 
@@ -236,12 +256,7 @@ export const generateAndSendOtp = async (userId, reason, options = {}) => {
     expires = new Date(Date.now() + 5 * 60 * 1000);
     updateData.resetToken = otp;
     updateData.resetExpires = expires;
-  }
-
-  if (reason === 'EMAIL_CHANGE') {
-    if (!options.newEmail) {
-      throw new AppError('O novo e-mail é obrigatório para este fluxo.', 400);
-    }
+  } else if (reason === 'EMAIL_CHANGE') {
     expires = new Date(Date.now() + 10 * 60 * 1000);
     updateData.changeEmailToken = otp;
     updateData.changeEmailExpires = expires;
@@ -254,25 +269,23 @@ export const generateAndSendOtp = async (userId, reason, options = {}) => {
   });
 
   const targetEmail = reason === 'EMAIL_CHANGE' ? options.newEmail : user.email;
-
   const { subject, html } = emailTemplates[reason]({
     token: otp,
     name: user.name,
   });
 
-  console.log(otp);
+  console.log(`[OTP GENERATED] User: ${user.username} | Code: ${otp}`);
 
-  if (reason === 'PASSWORD_RECOVERY') {
+  if (reason === 'PASSWORD_RECOVERY' || reason === 'EMAIL_CHANGE') {
     try {
       await sendEmail({ to: targetEmail, subject, html });
     } catch (error) {
-      logger.error(`Erro crítico no envio para ${targetEmail}:`, error);
-      throw new AppError('Erro ao enviar e-mail. Tente novamente.', 500);
+      logger.error(
+        `[SMTP-FORGOT] Falha mascarada no envio de recuperação para ${targetEmail}`,
+      );
     }
   } else {
-    sendEmail({ to: targetEmail, subject, html }).catch((err) => {
-      logger.error(`Falha silenciosa no e-mail para (${targetEmail}):`, err);
-    });
+    await sendEmail({ to: targetEmail, subject, html });
   }
 
   return true;
