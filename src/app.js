@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import AppError from './utils/appError.js';
 import errorHandler from './middlewares/errorHandler.js';
 import { apiLimiter } from './middlewares/rateLimiter.js';
+import { swaggerUi, specs, uiOptions } from './config/swagger.js';
 
 const app = express();
 
@@ -36,6 +37,8 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use('/public', express.static('uploads'));
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, uiOptions));
 
 app.use('/api/v1', apiLimiter);
 

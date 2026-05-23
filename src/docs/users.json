@@ -1,0 +1,97 @@
+{
+  "/users": {
+    "get": {
+      "summary": "Lista todos os usuários cadastrados com paginação (Apenas ADMIN/ROOT)",
+      "tags": ["Painel Administrativo"],
+      "security": [{ "bearerAuth": [] }],
+      "parameters": [
+        {
+          "name": "page",
+          "in": "query",
+          "schema": { "type": "integer", "default": 1 }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "schema": { "type": "integer", "default": 10 }
+        },
+        {
+          "name": "search",
+          "in": "query",
+          "schema": { "type": "string" },
+          "description": "Filtro por nome, e-mail ou username"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Registros retornados com paginação estruturada."
+        },
+        "403": { "description": "Acesso negado." }
+      }
+    }
+  },
+  "/users/{identifier}": {
+    "get": {
+      "summary": "Busca detalhes de um usuário pelo ID, Username ou E-mail",
+      "tags": ["Painel Administrativo"],
+      "security": [{ "bearerAuth": [] }],
+      "parameters": [
+        {
+          "name": "identifier",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "responses": {
+        "200": { "description": "Usuário encontrado." },
+        "404": { "description": "Nenhum usuário correspondente localizado." }
+      }
+    },
+    "patch": {
+      "summary": "Atualiza permissões e dados de terceiros respeitando a hierarquia de cargos",
+      "tags": ["Painel Administrativo"],
+      "security": [{ "bearerAuth": [] }],
+      "parameters": [
+        {
+          "name": "identifier",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "role": { "type": "string", "enum": ["USER", "ADMIN", "ROOT"] }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": { "description": "Alterações persistidas com sucesso." }
+      }
+    },
+    "delete": {
+      "summary": "Deleta o usuário do banco e revoga todas as sessões dele simultaneamente",
+      "tags": ["Painel Administrativo"],
+      "security": [{ "bearerAuth": [] }],
+      "parameters": [
+        {
+          "name": "identifier",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" }
+        }
+      ],
+      "responses": {
+        "204": { "description": "Usuário removido da plataforma com sucesso." }
+      }
+    }
+  }
+}
