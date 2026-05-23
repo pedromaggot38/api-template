@@ -3,6 +3,7 @@ import { protect } from '../middlewares/auth.js';
 import * as userController from '../controllers/userController.js';
 import validate from '../middlewares/validate.js';
 import {
+  deactivateMeSchema,
   updateMeSchema,
   updateMyPasswordSchema,
   verifyOtpSchema,
@@ -33,5 +34,10 @@ router.post(
 
 router.post('/change-email/request', userController.requestEmailChange);
 router.post('/change-email/verify', userController.verifyEmailChange);
+router.patch(
+  '/deactivate',
+  validate(deactivateMeSchema),
+  userController.deactivateMe,
+);
 
 export default router;

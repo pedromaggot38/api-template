@@ -127,3 +127,11 @@ export const resetPasswordSchema = z
     message: 'As senhas não coincidem',
     path: ['passwordConfirm'],
   });
+
+export const deactivateMeSchema = z.object({
+  password: z
+    .string({
+      required_error: 'A senha atual é obrigatória para desativar a conta.',
+    })
+    .min(1, 'Por favor, informe sua senha.'),
+});

@@ -3,7 +3,10 @@ import AppError from '../utils/appError.js';
 import catchAsync from '../utils/catchAsync.js';
 import * as userService from '../services/userService.js';
 import * as authService from '../services/authService.js';
-import { setRefreshTokenCookie } from '../utils/controllers/cookieUtils.js';
+import {
+  clearRefreshTokenCookie,
+  setRefreshTokenCookie,
+} from '../utils/controllers/cookieUtils.js';
 import { deleteFile, getFileUrl } from '../utils/fileUpload.js';
 
 export const getAllUsers = catchAsync(async (req, res, next) => {
@@ -212,5 +215,19 @@ export const verifyEmailChange = catchAsync(async (req, res) => {
     code: 200,
     message: 'E-mail atualizado com sucesso!',
     data: { email: updatedUser.email },
+  });
+});
+
+export const deactivateMe = catchAsync(async (req, res, next) => {
+  const { password } = req.body;
+
+  await userService.deactivateUserAccount(req.user.id, password);
+
+  clearRefreshTokenCookie(res);
+
+  return resfc({
+    res,
+    code: 200,
+    message: 'Sua conta foi desativada com sucesso. Sentiremos sua falta!',
   });
 });

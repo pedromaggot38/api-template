@@ -9,6 +9,12 @@ import { generateOtp } from '../utils/generateOtp.js';
 import { sendEmail } from '../utils/emailService.js';
 import { emailTemplates } from '../templates/emailTemplates.js';
 import logger from '../utils/logger.js';
+import { invalidateAllUserSessions } from './authService.js';
+
+export const hasAnyUser = async () => {
+  const count = await db.user.count();
+  return count > 0;
+};
 
 const findUserOrThrow = async (identifier) => {
   const where = parseUserIdentifier(identifier);
@@ -21,9 +27,16 @@ const findUserOrThrow = async (identifier) => {
   return user;
 };
 
-export const hasAnyUser = async () => {
-  const count = await db.user.count();
-  return count > 0;
+export const findUserByAnyIdentifier = async (identifier) => {
+  return await findUserOrThrow(identifier);
+};
+
+// Usado na rota de Esqueci Minha Senha
+export const findUserByAnyIdentifierWithoutError = async (identifier) => {
+  const where = parseUserIdentifier(identifier);
+  const user = await db.user.findUnique({ where });
+
+  return user;
 };
 
 /**
@@ -117,18 +130,6 @@ export const findAllUsers = async (options = {}) => {
       totalPages: Math.ceil(total / validatedLimit),
     },
   };
-};
-
-export const findUserByAnyIdentifier = async (identifier) => {
-  return await findUserOrThrow(identifier);
-};
-
-// Usado na rota de Esqueci Minha Senha
-export const findUserByAnyIdentifierWithoutError = async (identifier) => {
-  const where = parseUserIdentifier(identifier);
-  const user = await db.user.findUnique({ where });
-
-  return user;
 };
 
 export const updateUser = async (
@@ -357,5 +358,30 @@ export const confirmEmailChange = async (userId, token) => {
       changeEmailToken: null,
       changeEmailExpires: null,
     },
+  });
+};
+
+/**
+ * Desativa a conta do usuário logado mudando o status para 'deactivated'
+ * e derruba todas as suas sessões e cookies ativos de forma atômica.
+ * @param {string} userId - ID do usuário a ser desativado
+ */
+export const deactivateUserAccount = async (userId, currentPassword) => {
+  const user = await db.user.findUnique({ where: { id: userId } });
+
+  const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+  if (!isPasswordValid) {
+    throw new AppError(
+      'Senha incorreta. Confirme seus dados para desativar a conta.',
+      401,
+    );
+  }
+
+  return await db.$transaction(async (tx) => {
+    await invalidateAllUserSessions(userId, tx);
+    return await tx.user.update({
+      where: { id: userId },
+      data: { status: 'deactivated' },
+    });
   });
 };

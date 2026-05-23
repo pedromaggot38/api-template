@@ -194,5 +194,38 @@
         }
       }
     }
+  },
+  "/me/deactivate": {
+    "patch": {
+      "summary": "Desativa temporariamente a conta do usuário autenticado mediante confirmação de senha",
+      "tags": ["Meu Perfil (Me)"],
+      "security": [{ "bearerAuth": [] }],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["password"],
+              "properties": {
+                "password": {
+                  "type": "string",
+                  "example": "Senha@123",
+                  "description": "A senha atual do usuário para confirmar a reautenticação."
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Conta desativada e cookies de sessão limpos com sucesso."
+        },
+        "401": {
+          "description": "Senha incorreta ou token inválido."
+        }
+      }
+    }
   }
 }
