@@ -16,6 +16,8 @@ router
   .route('/:identifier')
   .get(userController.getUser)
   .patch(validate(updateUserSchema), userController.update)
-  .delete(restrictTo('root'), userController.remove);
+  .delete(restrictTo('root'), userController.deleteUserByAdmin);
+
+router.patch('/:identifier/deactivate', userController.deactivateUserByAdmin);
 
 export default router;

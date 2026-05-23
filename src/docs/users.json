@@ -93,5 +93,28 @@
         "204": { "description": "Usuário removido da plataforma com sucesso." }
       }
     }
+  },
+  "/users/{identifier}/deactivate": {
+    "patch": {
+      "summary": "Desativa a conta de qualquer usuário (Apenas ADMIN/ROOT - Sem necessidade de senha)",
+      "tags": ["Painel Administrativo"],
+      "security": [{ "bearerAuth": [] }],
+      "parameters": [
+        {
+          "name": "identifier",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" },
+          "example": "user"
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Conta de terceiro desativada e sessões revogadas pelo administrador."
+        },
+        "403": { "description": "Permissão insuficiente." },
+        "404": { "description": "Usuário não encontrado." }
+      }
+    }
   }
 }

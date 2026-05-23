@@ -8,6 +8,7 @@ import {
   setRefreshTokenCookie,
 } from '../utils/controllers/cookieUtils.js';
 import { deleteFile, getFileUrl } from '../utils/fileUpload.js';
+import { validateRoleHierarchy } from '../utils/controllers/userUtils.js';
 
 export const getAllUsers = catchAsync(async (req, res, next) => {
   const { users, pagination } = await userService.findAllUsers(req.query);
@@ -32,6 +33,39 @@ export const getUser = catchAsync(async (req, res, next) => {
     data: { user },
   });
 });
+
+export const deactivateUserByAdmin = catchAsync(async (req, res, next) => {
+  const { identifier } = req.params;
+
+  const targetUser = await userService.findUserByAnyIdentifier(identifier);
+
+  validateRoleHierarchy(req.user.role, targetUser.role);
+
+  await userService.deactivateUserAccount(targetUser.id);
+
+  return resfc({
+    res,
+    code: 200,
+    message: `A conta do usuário ${targetUser.username} foi desativada com sucesso pelo administrador.`,
+  });
+});
+
+export const deleteUserByAdmin = catchAsync(async (req, res, next) => {
+  const { identifier } = req.params;
+
+  const targetUser = await userService.findUserByAnyIdentifier(identifier);
+
+  await authService.invalidateAllUserSessions(targetUser.id);
+
+  await userService.deleteUser(targetUser.id, req.user.role);
+
+  return resfc({
+    res,
+    code: 204,
+  });
+});
+
+// Controllers funcionais para rota /ME
 
 export const update = catchAsync(async (req, res) => {
   const { identifier } = req.params;
@@ -138,21 +172,6 @@ export const updateMyPassword = catchAsync(async (req, res) => {
     code: 200,
     message: 'Senha alterada com sucesso!',
     data: { accessToken, refreshToken },
-  });
-});
-
-export const remove = catchAsync(async (req, res, next) => {
-  const { identifier } = req.params;
-
-  const targetUser = await userService.findUserByAnyIdentifier(identifier);
-
-  await authService.invalidateAllUserSessions(targetUser.id);
-
-  await userService.deleteUser(targetUser.id, req.user.role);
-
-  return resfc({
-    res,
-    code: 204,
   });
 });
 

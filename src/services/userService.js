@@ -362,23 +362,39 @@ export const confirmEmailChange = async (userId, token) => {
 };
 
 /**
- * Desativa a conta do usuário logado mudando o status para 'deactivated'
- * e derruba todas as suas sessões e cookies ativos de forma atômica.
+ * Desativa a conta de um usuário alterando o status para 'deactivated'
  * @param {string} userId - ID do usuário a ser desativado
+ * @param {string} [currentPassword] - Senha atual (obrigatória apenas se a requisição partir do próprio usuário)
  */
-export const deactivateUserAccount = async (userId, currentPassword) => {
+export const deactivateUserAccount = async (userId, currentPassword = null) => {
   const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) {
+    throw new AppError('Usuário não encontrado.', 404);
+  }
 
-  const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
-  if (!isPasswordValid) {
+  if (user.role === 'root') {
     throw new AppError(
-      'Senha incorreta. Confirme seus dados para desativar a conta.',
-      401,
+      'A conta root do sistema não pode ser desativada para evitar o bloqueio total da plataforma.',
+      403,
     );
+  }
+
+  if (currentPassword) {
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new AppError(
+        'Senha incorreta. Confirme seus dados para desativar a conta.',
+        401,
+      );
+    }
   }
 
   return await db.$transaction(async (tx) => {
     await invalidateAllUserSessions(userId, tx);
+
     return await tx.user.update({
       where: { id: userId },
       data: { status: 'deactivated' },
