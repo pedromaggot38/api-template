@@ -70,11 +70,14 @@ export const updateMe = catchAsync(async (req, res, next) => {
   const updateData = { ...req.body };
 
   if (req.file) {
-    if (currentUser.avatar) {
+    if (currentUser.avatar && currentUser.avatar.startsWith('/public/')) {
       deleteFile(currentUser.avatar);
     }
-
     updateData.avatar = getFileUrl(req.file, 'avatars');
+  } else if (updateData.avatar && updateData.avatar !== currentUser.avatar) {
+    if (currentUser.avatar && currentUser.avatar.startsWith('/public/')) {
+      deleteFile(currentUser.avatar);
+    }
   }
 
   const { user, wasUpdated } = await userService.updateUser(
