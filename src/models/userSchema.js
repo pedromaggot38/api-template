@@ -123,11 +123,6 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z
   .object({
-    identifier: z
-      .string({ required_error: 'O identificador é necessário' })
-      .trim()
-      .min(1)
-      .transform(sanitizeString),
     token: z
       .string()
       .length(6, 'O código deve ter exatamente 6 dígitos')

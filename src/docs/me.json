@@ -174,11 +174,11 @@
                 },
                 "password": {
                   "type": "string",
-                  "example": "newroot"
+                  "example": "root1"
                 },
                 "passwordConfirm": {
                   "type": "string",
-                  "example": "newroot"
+                  "example": "root1"
                 }
               }
             }
@@ -296,7 +296,7 @@
               "properties": {
                 "password": {
                   "type": "string",
-                  "example": "Senha@123",
+                  "example": "root",
                   "description": "A senha atual do usuário para confirmar a reautenticação."
                 }
               }

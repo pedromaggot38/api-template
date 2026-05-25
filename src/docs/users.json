@@ -58,12 +58,12 @@
                 "password": {
                   "type": "string",
                   "format": "password",
-                  "example": "admin"
+                  "example": "root"
                 },
                 "passwordConfirm": {
                   "type": "string",
                   "format": "password",
-                  "example": "admin"
+                  "example": "root"
                 },
                 "role": {
                   "type": "string",

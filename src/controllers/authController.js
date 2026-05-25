@@ -149,10 +149,9 @@ export const resetPassword = catchAsync(async (req, res, next) => {
     device: req.headers['user-agent'] || 'Unknown',
   };
 
-  const { identifier, token, password } = req.body;
+  const { token, password } = req.body;
 
   const user = await userService.resetUserPassword({
-    identifier,
     token,
     password,
   });

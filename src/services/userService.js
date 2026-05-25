@@ -174,6 +174,13 @@ export const updateUser = async (
     }
   });
 
+  if (currentUser.role === 'root' && changes.role) {
+    throw new AppError(
+      'Não é permitido alterar ou reduzir os privilégios de uma conta de nível ROOT.',
+      403,
+    );
+  }
+
   const hasChanges = Object.keys(changes).length > 0;
 
   if (!hasChanges) {
@@ -348,22 +355,22 @@ export const verifyVerificationUserCode = async (userId, token) => {
   return { user: updatedUser, message };
 };
 
-export const resetUserPassword = async ({ identifier, token, password }) => {
-  const user = await findUserByAnyIdentifierWithoutError(identifier);
+export const resetUserPassword = async ({ token, password }) => {
+  const user = await db.user.findFirst({
+    where: {
+      resetToken: token,
+      resetExpires: { gt: new Date() },
+    },
+  });
 
-  if (
-    !user ||
-    !user.resetToken ||
-    user.resetToken !== token ||
-    user.resetExpires < new Date()
-  ) {
+  if (!user) {
     throw new AppError('Código de recuperação inválido ou expirado.', 400);
   }
 
   return await db.user.update({
     where: { id: user.id },
     data: {
-      password,
+      password: password,
       resetToken: null,
       resetExpires: null,
       passwordChangedAt: new Date(),
