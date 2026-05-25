@@ -4,6 +4,7 @@ import * as userController from '../controllers/userController.js';
 import validate from '../middlewares/validate.js';
 import {
   deactivateMeSchema,
+  requestEmailChangeSchema,
   updateMeSchema,
   updateMyPasswordSchema,
   verifyOtpSchema,
@@ -32,8 +33,17 @@ router.post(
   userController.verifyAccount,
 );
 
-router.post('/change-email/request', userController.requestEmailChange);
-router.post('/change-email/verify', userController.verifyEmailChange);
+router.post(
+  '/change-email/request',
+  validate(requestEmailChangeSchema),
+  userController.requestEmailChange,
+);
+
+router.post(
+  '/change-email/verify',
+  validate(verifyOtpSchema),
+  userController.verifyEmailChange,
+);
 router.patch(
   '/deactivate',
   validate(deactivateMeSchema),

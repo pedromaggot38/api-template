@@ -21,6 +21,23 @@ export const getAllUsers = catchAsync(async (req, res, next) => {
   });
 });
 
+export const adminCreateUser = catchAsync(async (req, res, next) => {
+  const { passwordConfirm, ...newUserData } = req.body;
+
+  const newUser = await userService.createUserByAdmin(
+    req.user.id,
+    req.user.role,
+    newUserData,
+  );
+
+  return resfc({
+    res,
+    code: 201,
+    message: `Usuário ${newUser.name} criado com sucesso com o cargo [${newUser.role.toUpperCase()}].`,
+    data: { user: newUser },
+  });
+});
+
 export const getUser = catchAsync(async (req, res, next) => {
   const { identifier } = req.params;
 

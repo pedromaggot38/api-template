@@ -64,6 +64,29 @@ export const createFirstRootUser = async (userData) => {
   return firstRoot;
 };
 
+export const createUserByAdmin = async (
+  performerId,
+  performerRole,
+  userData,
+) => {
+  validateRoleHierarchy(performerRole, userData.role);
+
+  const emailExists = await findUserByAnyIdentifierWithoutError(userData.email);
+  if (emailExists) throw new AppError('Este e-mail já está em uso.', 400);
+
+  const usernameExists = await findUserByAnyIdentifierWithoutError(
+    userData.username,
+  );
+  if (usernameExists) throw new AppError('Este username já está em uso.', 400);
+
+  return await db.user.create({
+    data: {
+      ...userData,
+      passwordChangedAt: null,
+    },
+  });
+};
+
 export const findAllUsers = async (options = {}) => {
   const {
     page = 1,

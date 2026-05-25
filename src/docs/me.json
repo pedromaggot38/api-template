@@ -23,17 +23,32 @@
                 "avatar": {
                   "type": "string",
                   "format": "binary",
-                  "description": "Selecione um arquivo físico de imagem (JPEG, PNG, WEBP) de até 2MB."
+                  "description": "Selecione um arquivo físico de imagem (JPEG, PNG, WEBP) de até 2MB. O backend processará via Multer."
                 },
                 "name": {
                   "type": "string",
-                  "example": "root user",
+                  "minLength": 3,
+                  "example": "User",
                   "description": "Nome completo do usuário."
                 },
                 "username": {
                   "type": "string",
-                  "example": "root",
-                  "description": "Nome de usuário único para identificação na plataforma."
+                  "minLength": 3,
+                  "maxLength": 20,
+                  "example": "pedrosanches",
+                  "description": "Nome de usuário único para identificação."
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email",
+                  "example": "pedro@gmail.com",
+                  "description": "Novo e-mail do usuário (Se alterado, pode acionar gatilho de verificação dependendo da sua regra de negócio)."
+                },
+                "phone": {
+                  "type": "string",
+                  "minLength": 10,
+                  "example": "18999999999",
+                  "description": "Número de telefone celular ou fixo."
                 }
               }
             }
@@ -44,16 +59,30 @@
               "properties": {
                 "avatar": {
                   "type": "string",
+                  "format": "uri",
                   "example": "https://avatars.githubusercontent.com/u/123456",
-                  "description": "Cole aqui a URL externa direta de uma imagem da internet."
+                  "description": "URL externa direta de uma imagem hospedada na internet."
                 },
                 "name": {
                   "type": "string",
-                  "example": "root user"
+                  "minLength": 3,
+                  "example": "Pedro Sanches"
                 },
                 "username": {
                   "type": "string",
-                  "example": "root"
+                  "minLength": 3,
+                  "maxLength": 20,
+                  "example": "pedrosanches"
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email",
+                  "example": "pedro@gmail.com"
+                },
+                "phone": {
+                  "type": "string",
+                  "minLength": 10,
+                  "example": "18999999999"
                 }
               }
             }
@@ -61,11 +90,68 @@
         }
       },
       "responses": {
-        "200": { "description": "Perfil e avatar atualizados com sucesso." },
-        "400": {
-          "description": "Erro de validação nos campos enviados ou payload vazio."
+        "200": {
+          "description": "Perfil e avatar atualizados com sucesso.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "string", "example": "success" },
+                  "message": {
+                    "type": "string",
+                    "example": "Dados do perfil atualizados com sucesso."
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "user": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "65b8f13e-128a-4d29-a1b9-9bc90e940023"
+                          },
+                          "name": {
+                            "type": "string",
+                            "example": "Pedro Sanches"
+                          },
+                          "username": {
+                            "type": "string",
+                            "example": "pedrosanches"
+                          },
+                          "email": {
+                            "type": "string",
+                            "example": "pedro@gmail.com"
+                          },
+                          "phone": {
+                            "type": "string",
+                            "example": "18999999999"
+                          },
+                          "avatar": {
+                            "type": "string",
+                            "example": "https://cdn.seusistema.com/avatars/pedro.webp"
+                          },
+                          "role": { "type": "string", "example": "user" },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         },
-        "401": { "description": "Token JWT ausente ou inválido." }
+        "400": {
+          "description": "Erro de validação nos campos enviados (Zod), formato de arquivo inválido ou payload vazio."
+        },
+        "401": {
+          "description": "Token JWT ausente, expirado ou inválido."
+        }
       }
     }
   },

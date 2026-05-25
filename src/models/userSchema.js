@@ -39,6 +39,12 @@ const userBaseFields = z.object({
     .transform((val) => (val ? sanitizeString(val) : val)),
 });
 
+export const adminCreateUserSchema = userBaseFields.extend({
+  role: z.enum(['user', 'admin', 'root'], {
+    required_error: 'Defina o cargo (role) do novo usuário.',
+  }),
+});
+
 export const registerSchema = userBaseFields.refine(
   (data) => data.password === data.passwordConfirm,
   {
@@ -91,6 +97,13 @@ export const updateMyPasswordSchema = z
     message: 'As senhas não coincidem',
     path: ['passwordConfirm'],
   });
+
+export const requestEmailChangeSchema = z.object({
+  newEmail: z
+    .email('Por favor, informe um endereço de e-mail válido.')
+    .toLowerCase()
+    .trim(),
+});
 
 export const verifyOtpSchema = z.object({
   token: z

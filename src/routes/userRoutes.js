@@ -2,7 +2,10 @@ import express from 'express';
 import * as userController from '../controllers/userController.js';
 import { protect, restrictTo } from '../middlewares/auth.js';
 import validate from '../middlewares/validate.js';
-import { updateUserSchema } from '../models/userSchema.js';
+import {
+  adminCreateUserSchema,
+  updateUserSchema,
+} from '../models/userSchema.js';
 
 const router = express.Router();
 
@@ -10,7 +13,15 @@ router.use(protect);
 
 router.use(restrictTo('root', 'admin'));
 
-router.route('/').get(userController.getAllUsers);
+router
+  .route('/')
+  .get(userController.getAllUsers)
+  .post(
+    protect,
+    restrictTo('admin', 'root'),
+    validate(adminCreateUserSchema),
+    userController.adminCreateUser,
+  );
 
 router
   .route('/:identifier')

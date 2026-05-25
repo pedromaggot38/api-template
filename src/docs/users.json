@@ -28,6 +28,112 @@
         },
         "403": { "description": "Acesso negado." }
       }
+    },
+    "post": {
+      "summary": "Cria um novo usuário diretamente com cargo customizado (Apenas ADMIN/ROOT)",
+      "tags": ["Painel Administrativo"],
+      "security": [{ "bearerAuth": [] }],
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "name",
+                "username",
+                "email",
+                "password",
+                "passwordConfirm",
+                "role"
+              ],
+              "properties": {
+                "name": { "type": "string", "example": "Admin User" },
+                "username": { "type": "string", "example": "admin" },
+                "email": {
+                  "type": "string",
+                  "format": "email",
+                  "example": "admin@gmail.com"
+                },
+                "password": {
+                  "type": "string",
+                  "format": "password",
+                  "example": "admin"
+                },
+                "passwordConfirm": {
+                  "type": "string",
+                  "format": "password",
+                  "example": "admin"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": ["user", "admin", "root"],
+                  "example": "admin",
+                  "description": "Cargo atribuído respeitando a hierarquia de quem executa a ação."
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Usuário gerado com sucesso pelo administrador (Conta criada ativa e pré-verificada).",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "string", "example": "success" },
+                  "message": {
+                    "type": "string",
+                    "example": "Usuário Pedro Sanches criado com sucesso com o cargo [ADMIN]."
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "user": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "65b8f13e-128a-4d29-a1b9-9bc90e940023"
+                          },
+                          "name": {
+                            "type": "string",
+                            "example": "Pedro Sanches"
+                          },
+                          "username": {
+                            "type": "string",
+                            "example": "pedrosanches"
+                          },
+                          "email": {
+                            "type": "string",
+                            "example": "pedro@gmail.com"
+                          },
+                          "role": { "type": "string", "example": "admin" },
+                          "isVerified": { "type": "boolean", "example": true },
+                          "status": { "type": "string", "example": "active" },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Dados de payload inválidos ou e-mail/username já em uso pela plataforma."
+        },
+        "403": {
+          "description": "Violação na hierarquia de cargos ou token inválido/ausente."
+        }
+      }
     }
   },
   "/users/{identifier}": {
@@ -57,7 +163,8 @@
           "name": "identifier",
           "in": "path",
           "required": true,
-          "schema": { "type": "string" }
+          "schema": { "type": "string" },
+          "description": "ID, Username ou E-mail do usuário que será atualizado"
         }
       ],
       "requestBody": {
@@ -66,15 +173,107 @@
             "schema": {
               "type": "object",
               "properties": {
-                "name": { "type": "string" },
-                "role": { "type": "string", "enum": ["USER", "ADMIN", "ROOT"] }
+                "name": {
+                  "type": "string",
+                  "minLength": 3,
+                  "example": "Root User"
+                },
+                "username": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 20,
+                  "example": "root"
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email",
+                  "example": "root@gmail.com"
+                },
+                "phone": {
+                  "type": "string",
+                  "minLength": 10,
+                  "example": "18999999999"
+                },
+                "avatar": {
+                  "type": "string",
+                  "format": "uri",
+                  "example": ""
+                },
+                "role": {
+                  "type": "string",
+                  "enum": ["user", "admin", "root"],
+                  "example": "root",
+                  "description": "Alteração de cargo restrita pela hierarquia de quem executa a ação."
+                }
               }
             }
           }
         }
       },
       "responses": {
-        "200": { "description": "Alterações persistidas com sucesso." }
+        "200": {
+          "description": "Alterações persistidas com sucesso.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": { "type": "string", "example": "success" },
+                  "message": {
+                    "type": "string",
+                    "example": "Dados do usuário atualizados com sucesso."
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "user": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "65b8f13e-128a-4d29-a1b9-9bc90e940023"
+                          },
+                          "name": {
+                            "type": "string",
+                            "example": "Root User"
+                          },
+                          "username": {
+                            "type": "string",
+                            "example": "root"
+                          },
+                          "email": {
+                            "type": "string",
+                            "example": "root@gmail.com"
+                          },
+                          "phone": {
+                            "type": "string",
+                            "example": "18999999999"
+                          },
+                          "avatar": {
+                            "type": "string",
+                            "example": ""
+                          },
+                          "role": { "type": "string", "example": "root" },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "400": {
+          "description": "Dados informados são inválidos ou violam chaves únicas (e-mail/username já em uso)."
+        },
+        "403": {
+          "description": "Subversão de hierarquia (ex: ADMIN tentando alterar dados de um ROOT)."
+        },
+        "404": { "description": "Nenhum usuário correspondente localizado." }
       }
     },
     "delete": {
