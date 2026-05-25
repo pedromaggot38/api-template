@@ -367,6 +367,15 @@ export const resetUserPassword = async ({ token, password }) => {
     throw new AppError('Código de recuperação inválido ou expirado.', 400);
   }
 
+  const isSamePassword = await bcrypt.compare(password, user.password);
+
+  if (isSamePassword) {
+    throw new AppError(
+      'A nova senha não pode ser idêntica à senha atual da sua conta.',
+      400,
+    );
+  }
+
   return await db.user.update({
     where: { id: user.id },
     data: {
