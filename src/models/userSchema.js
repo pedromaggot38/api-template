@@ -36,6 +36,7 @@ const userBaseFields = z.object({
     .string()
     .min(10, 'Telefone inválido')
     .optional()
+    .or(z.literal(''))
     .transform((val) => (val ? sanitizeString(val) : val)),
 });
 
@@ -88,10 +89,8 @@ export const updateMeSchema = userBaseFields
 export const updateMyPasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Senha atual é obrigatória'),
-    newPassword: z
-      .string()
-      .min(4, 'A nova senha deve ter pelo menos 4 caracteres'),
-    passwordConfirm: z.string(),
+    newPassword: userBaseFields.shape.password,
+    passwordConfirm: userBaseFields.shape.passwordConfirm,
   })
   .refine((data) => data.newPassword === data.passwordConfirm, {
     message: 'As senhas não coincidem',

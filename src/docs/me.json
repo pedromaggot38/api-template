@@ -28,21 +28,15 @@
                 "name": {
                   "type": "string",
                   "minLength": 3,
-                  "example": "User",
+                  "example": "Root User",
                   "description": "Nome completo do usuário."
                 },
                 "username": {
                   "type": "string",
                   "minLength": 3,
                   "maxLength": 20,
-                  "example": "pedrosanches",
+                  "example": "root",
                   "description": "Nome de usuário único para identificação."
-                },
-                "email": {
-                  "type": "string",
-                  "format": "email",
-                  "example": "pedro@gmail.com",
-                  "description": "Novo e-mail do usuário (Se alterado, pode acionar gatilho de verificação dependendo da sua regra de negócio)."
                 },
                 "phone": {
                   "type": "string",
@@ -66,18 +60,13 @@
                 "name": {
                   "type": "string",
                   "minLength": 3,
-                  "example": "Pedro Sanches"
+                  "example": "Root User"
                 },
                 "username": {
                   "type": "string",
                   "minLength": 3,
                   "maxLength": 20,
-                  "example": "pedrosanches"
-                },
-                "email": {
-                  "type": "string",
-                  "format": "email",
-                  "example": "pedro@gmail.com"
+                  "example": "root"
                 },
                 "phone": {
                   "type": "string",
@@ -114,15 +103,11 @@
                           },
                           "name": {
                             "type": "string",
-                            "example": "Pedro Sanches"
+                            "example": "Root User"
                           },
                           "username": {
                             "type": "string",
-                            "example": "pedrosanches"
-                          },
-                          "email": {
-                            "type": "string",
-                            "example": "pedro@gmail.com"
+                            "example": "root"
                           },
                           "phone": {
                             "type": "string",
@@ -130,9 +115,9 @@
                           },
                           "avatar": {
                             "type": "string",
-                            "example": "https://cdn.seusistema.com/avatars/pedro.webp"
+                            "example": "https://avatars.githubusercontent.com/u/123456"
                           },
-                          "role": { "type": "string", "example": "user" },
+                          "role": { "type": "string", "example": "root" },
                           "updatedAt": {
                             "type": "string",
                             "format": "date-time"
@@ -157,7 +142,7 @@
   },
   "/me/password": {
     "patch": {
-      "summary": "Altera a senha do usuário de dentro da sua sessão ativa",
+      "summary": "Altera a senha do usuário de dentro da sua sessão activa",
       "tags": ["Meu Perfil (Me)"],
       "security": [{ "bearerAuth": [] }],
       "requestBody": {
@@ -190,7 +175,7 @@
       }
     }
   },
-  "/me/request-token": {
+  "/me/activation": {
     "post": {
       "summary": "Gera e envia um novo token OTP para validação da conta do usuário logado",
       "tags": ["Meu Perfil (Me)"],
@@ -200,11 +185,9 @@
           "description": "Token de ativação disparado para o e-mail cadastrado."
         }
       }
-    }
-  },
-  "/me/verify-token": {
-    "post": {
-      "summary": "Consome o token OTP recebido para confirmar e ativar a conta permanentemente",
+    },
+    "patch": {
+      "summary": "Consome o token OTP recebido para confirmar e ativar a conta do usuário logado",
       "tags": ["Meu Perfil (Me)"],
       "security": [{ "bearerAuth": [] }],
       "requestBody": {
@@ -222,11 +205,14 @@
         }
       },
       "responses": {
-        "200": { "description": "Conta verificada com sucesso." }
+        "200": { "description": "Conta verificada com sucesso." },
+        "400": {
+          "description": "Token inválido, expirado ou conta já verificada."
+        }
       }
     }
   },
-  "/me/change-email/request": {
+  "/me/email": {
     "post": {
       "summary": "Inicia a troca de e-mail enviando um token de aprovação para o NOVO e-mail solicitado",
       "tags": ["Meu Perfil (Me)"],
@@ -253,11 +239,9 @@
           "description": "Token de segurança enviado ao novo endereço eletrônico informado."
         }
       }
-    }
-  },
-  "/me/change-email/verify": {
-    "post": {
-      "summary": "Valida o token enviado ao novo endereço e consolida a troca do e-mail no perfil",
+    },
+    "patch": {
+      "summary": "Valida o token enviado ao novo endereço e consolida a alteração do e-mail no perfil",
       "tags": ["Meu Perfil (Me)"],
       "security": [{ "bearerAuth": [] }],
       "requestBody": {
@@ -277,6 +261,9 @@
       "responses": {
         "200": {
           "description": "E-mail atualizado com sucesso no banco de dados."
+        },
+        "400": {
+          "description": "Token inválido ou expirado."
         }
       }
     }

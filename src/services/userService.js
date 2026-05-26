@@ -236,9 +236,9 @@ export const updateMyPassword = async (
     throw new AppError('A senha atual está incorreta', 401);
   }
 
-  const isSameAsOld = await bcrypt.compare(newPassword, user.password);
+  const isSamePassword = await bcrypt.compare(newPassword, user.password);
 
-  if (isSameAsOld) {
+  if (isSamePassword) {
     throw new AppError('A nova senha não pode ser igual à senha atual', 400);
   }
 
@@ -321,38 +321,62 @@ export const generateAndSendOtp = async (userId, reason, options = {}) => {
   return true;
 };
 
-export const verifyVerificationUserCode = async (userId, token) => {
+export const verifyOtpCode = async (userId, token, reason) => {
   const user = await findUserOrThrow(userId);
 
-  if (
-    !user.verifyToken ||
-    user.verifyToken !== token ||
-    user.verifyExpires < new Date()
-  ) {
-    throw new AppError('Código de verificação inválido ou expirado', 400);
-  }
-
-  const updateData = {
-    isVerified: true,
-    verifyToken: null,
-    verifyExpires: null,
-    status: 'active',
+  const reasonConfig = {
+    ACCOUNT_VERIFICATION: {
+      tokenField: 'verifyToken',
+      expiresField: 'verifyExpires',
+      errorMessage: 'Código de ativação inválido ou expirado.',
+      successMessage: 'Conta ativada e verificada com sucesso!',
+      updateData: {
+        verifyToken: null,
+        verifyExpires: null,
+        isVerified: true,
+        status: 'active',
+      },
+    },
+    EMAIL_CHANGE: {
+      tokenField: 'changeEmailToken',
+      expiresField: 'changeEmailExpires',
+      errorMessage: 'Código de confirmação de e-mail inválido ou expirado.',
+      successMessage: 'E-mail atualizado e verificado com sucesso!',
+      updateData: {
+        email: user.newEmail,
+        newEmail: null,
+        status: 'active',
+        isVerified: true,
+        verifyToken: null,
+        verifyExpires: null,
+        changeEmailToken: null,
+        changeEmailExpires: null,
+      },
+    },
   };
 
-  let message = 'Conta verificada com sucesso!';
+  const config = reasonConfig[reason];
 
-  if (user.newEmail) {
-    updateData.email = user.newEmail;
-    updateData.newEmail = null;
-    message = 'E-mail atualizado e verificado com sucesso!';
+  if (!config) {
+    throw new AppError('Ação de verificação não suportada pelo sistema.', 400);
+  }
+
+  const dbToken = user[config.tokenField];
+  const dbExpires = user[config.expiresField];
+
+  if (!dbToken || dbToken !== token || dbExpires < new Date()) {
+    throw new AppError(config.errorMessage, 400);
   }
 
   const updatedUser = await db.user.update({
     where: { id: user.id },
-    data: updateData,
+    data: config.updateData,
   });
 
-  return { user: updatedUser, message };
+  return {
+    user: updatedUser,
+    message: config.successMessage,
+  };
 };
 
 export const resetUserPassword = async ({ token, password }) => {
@@ -383,32 +407,6 @@ export const resetUserPassword = async ({ token, password }) => {
       resetToken: null,
       resetExpires: null,
       passwordChangedAt: new Date(),
-    },
-  });
-};
-
-export const confirmEmailChange = async (userId, token) => {
-  const user = await findUserOrThrow(userId);
-
-  if (
-    !user.changeEmailToken ||
-    user.changeEmailToken !== token ||
-    user.changeEmailExpires < new Date()
-  ) {
-    throw new AppError('Código de confirmação inválido ou expirado.', 400);
-  }
-
-  return await db.user.update({
-    where: { id: userId },
-    data: {
-      email: user.newEmail,
-      newEmail: null,
-      status: 'active',
-      isVerified: true,
-      verifyToken: null,
-      verifyExpires: null,
-      changeEmailToken: null,
-      changeEmailExpires: null,
     },
   });
 };

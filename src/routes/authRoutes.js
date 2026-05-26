@@ -29,7 +29,7 @@ router.post(
 );
 
 router.post('/refresh', authController.refresh);
-router.get('/signout', authController.signout);
+router.post('/signout', authController.signout);
 
 router.post(
   '/forgot-password',

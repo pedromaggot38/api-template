@@ -203,10 +203,16 @@ export const requestAccountVerification = catchAsync(async (req, res) => {
 });
 
 export const verifyAccount = catchAsync(async (req, res) => {
+  if (req.user.isVerified) {
+    throw new AppError('Esta conta já se encontra ativa e verificada.', 400);
+  }
+
   const { token } = req.body;
-  const { user, message } = await userService.verifyVerificationUserCode(
+
+  const { user, message } = await userService.verifyOtpCode(
     req.user.id,
     token,
+    'ACCOUNT_VERIFICATION',
   );
 
   return resfc({
@@ -238,13 +244,17 @@ export const verifyEmailChange = catchAsync(async (req, res) => {
     throw new AppError('O código de confirmação é obrigatório.', 400);
   }
 
-  const updatedUser = await userService.confirmEmailChange(req.user.id, token);
+  const { user, message } = await userService.verifyOtpCode(
+    req.user.id,
+    token,
+    'EMAIL_CHANGE',
+  );
 
   return resfc({
     res,
     code: 200,
-    message: 'E-mail atualizado com sucesso!',
-    data: { email: updatedUser.email },
+    data: { user },
+    message,
   });
 });
 

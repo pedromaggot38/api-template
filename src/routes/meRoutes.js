@@ -26,24 +26,16 @@ router.patch(
   userController.updateMyPassword,
 );
 
-router.post('/request-token', userController.requestAccountVerification);
-router.post(
-  '/verify-token',
-  validate(verifyOtpSchema),
-  userController.verifyAccount,
-);
+router
+  .route('/activation')
+  .post(userController.requestAccountVerification)
+  .patch(validate(verifyOtpSchema), userController.verifyAccount);
 
-router.post(
-  '/change-email/request',
-  validate(requestEmailChangeSchema),
-  userController.requestEmailChange,
-);
+router
+  .route('/email')
+  .post(validate(requestEmailChangeSchema), userController.requestEmailChange)
+  .patch(validate(verifyOtpSchema), userController.verifyEmailChange);
 
-router.post(
-  '/change-email/verify',
-  validate(verifyOtpSchema),
-  userController.verifyEmailChange,
-);
 router.patch(
   '/deactivate',
   validate(deactivateMeSchema),
