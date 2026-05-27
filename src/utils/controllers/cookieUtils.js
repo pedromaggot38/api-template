@@ -5,11 +5,11 @@
  * @param {string} refreshToken - Token JWT de renovação longa
  */
 export const setRefreshTokenCookie = (res, req, refreshToken) => {
+  const expireDays =
+    parseInt(process.env.JWT_REFRESH_COOKIE_EXPIRES_IN, 10) || 7;
+
   res.cookie('refreshToken', refreshToken, {
-    expires: new Date(
-      Date.now() +
-        process.env.JWT_REFRESH_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
-    ),
+    expires: new Date(Date.now() + expireDays * 24 * 60 * 60 * 1000),
     httpOnly: true,
     secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
     sameSite: 'strict',

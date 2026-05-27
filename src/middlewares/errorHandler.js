@@ -47,10 +47,14 @@ const handleForeignKeyConstraintError = (err) => {
 };
 
 const handleZodError = (err) => {
-  const errors = err.errors.map((e) => ({
-    field: e.path.join('.'),
-    message: e.message,
+  const rawErrors = err.issues || err.errors || [];
+
+  const errors = rawErrors.map((e) => ({
+    campo:
+      e.path && e.path.length > 0 ? e.path[e.path.length - 1] : 'formulario',
+    mensagem: e.message,
   }));
+
   return new AppError('Erro de validação nos campos enviados.', 400, errors);
 };
 
@@ -95,6 +99,16 @@ const sendErrorProd = (err, res) => {
 };
 
 const enrichError = (err) => {
+  if (err.name === 'ZodError') return handleZodError(err);
+  if (err.name === 'JsonWebTokenError') return handleJWTError();
+  if (err.name === 'TokenExpiredError') return handleJWTExpiredError();
+
+  if (err.name === 'PrismaClientValidationError') {
+    return err.message.includes('provided')
+      ? handlePrismaEnumError(err)
+      : handlePrismaValidationError(err);
+  }
+
   const error = {
     ...err,
     message: err.message,
@@ -105,15 +119,6 @@ const enrichError = (err) => {
   if (error.code === 'P2002') return handlePrismaDuplicateFieldError(error);
   if (error.code === 'P2025') return handlePrismaNotFoundError(error);
   if (error.code === 'P2003') return handleForeignKeyConstraintError(error);
-  if (error.name === 'ZodError') return handleZodError(err);
-  if (error.name === 'JsonWebTokenError') return handleJWTError();
-  if (error.name === 'TokenExpiredError') return handleJWTExpiredError();
-
-  if (error.name === 'PrismaClientValidationError') {
-    return error.message.includes('provided')
-      ? handlePrismaEnumError(error)
-      : handlePrismaValidationError(error);
-  }
 
   return error;
 };
