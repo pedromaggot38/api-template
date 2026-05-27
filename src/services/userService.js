@@ -31,7 +31,6 @@ export const findUserByAnyIdentifier = async (identifier) => {
   return await findUserOrThrow(identifier);
 };
 
-// Usado na rota de Esqueci Minha Senha
 export const findUserByAnyIdentifierWithoutError = async (identifier) => {
   const where = parseUserIdentifier(identifier);
   const user = await db.user.findUnique({ where });

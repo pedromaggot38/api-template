@@ -28,13 +28,13 @@ router.patch(
 
 router
   .route('/activation')
-  .post(userController.requestAccountVerification)
+  .post(userController.requestActivationToken)
   .patch(validate(verifyOtpSchema), userController.verifyAccount);
 
 router
   .route('/email')
-  .post(validate(requestEmailChangeSchema), userController.requestEmailChange)
-  .patch(validate(verifyOtpSchema), userController.verifyEmailChange);
+  .post(validate(requestEmailChangeSchema), userController.updateEmailRequest)
+  .patch(validate(verifyOtpSchema), userController.verifyEmailUpdate);
 
 router.patch(
   '/deactivate',

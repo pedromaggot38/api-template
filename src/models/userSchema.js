@@ -15,6 +15,12 @@ export const identifierParamSchema = z.object({
     .transform(sanitizeString),
 });
 
+const passwordConfirmationFields = z.object({
+  passwordConfirm: z.string({
+    required_error: 'A confirmação de senha é obrigatória.',
+  }),
+});
+
 const userBaseFields = z.object({
   name: z
     .string()
@@ -30,7 +36,6 @@ const userBaseFields = z.object({
     .email('Formato de e-mail inválido')
     .transform((val) => normalizeInput(sanitizeString(val))),
   password: z.string().min(4, 'A senha deve ter pelo menos 4 caracteres'),
-  passwordConfirm: z.string(),
   avatar: z.string().url('URL do avatar inválida').optional().or(z.literal('')),
   phone: z
     .string()
@@ -40,19 +45,24 @@ const userBaseFields = z.object({
     .transform((val) => (val ? sanitizeString(val) : val)),
 });
 
-export const adminCreateUserSchema = userBaseFields.extend({
-  role: z.enum(['user', 'admin', 'root'], {
-    required_error: 'Defina o cargo (role) do novo usuário.',
-  }),
-});
-
-export const registerSchema = userBaseFields.refine(
-  (data) => data.password === data.passwordConfirm,
-  {
+export const adminCreateUserSchema = userBaseFields
+  .merge(passwordConfirmationFields)
+  .extend({
+    role: z.enum(['user', 'admin', 'root'], {
+      required_error: 'Defina o cargo do novo usuário.',
+    }),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
     message: 'As senhas não coincidem',
     path: ['passwordConfirm'],
-  },
-);
+  });
+
+export const registerSchema = userBaseFields
+  .merge(passwordConfirmationFields)
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: 'As senhas não coincidem',
+    path: ['passwordConfirm'],
+  });
 
 export const loginSchema = z.object({
   username: z

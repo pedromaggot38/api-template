@@ -58,8 +58,8 @@ export const authenticate = async (username, password, clientInfo) => {
 
   if (!allowedStatuses.includes(user.status)) {
     const messages = {
-      banned: 'Sua conta foi banida por violação dos termos.',
       // pending: 'Por favor, confirme seu e-mail para acessar.',
+      banned: 'Sua conta foi banida por violação dos termos.',
       deactivated: 'Esta conta foi desativada.',
     };
 

@@ -12,6 +12,7 @@ services:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     #command: tail -f /dev/null
+    #command: ["./entrypoint.sh"]
     command: npm run start:dev
     depends_on:
       db:

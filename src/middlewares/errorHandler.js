@@ -82,10 +82,10 @@ const sendErrorProd = (err, res) => {
       errors: err.errors || [],
     });
   } else {
-    logger.error('CRITICAL ERROR 💥', { 
+    logger.error('CRITICAL ERROR 💥', {
       message: err.message,
       stack: err.stack,
-      name: err.name 
+      name: err.name,
     });
     res.status(500).json({
       status: 'error',
@@ -95,7 +95,12 @@ const sendErrorProd = (err, res) => {
 };
 
 const enrichError = (err) => {
-  let error = { ...err, message: err.message, name: err.name, code: err.code };
+  const error = {
+    ...err,
+    message: err.message,
+    name: err.name,
+    code: err.code,
+  };
 
   if (error.code === 'P2002') return handlePrismaDuplicateFieldError(error);
   if (error.code === 'P2025') return handlePrismaNotFoundError(error);
@@ -123,7 +128,7 @@ export default (err, req, res, next) => {
     logger.warn(`Operational Error: ${enrichedError.message}`, {
       path: req.originalUrl,
       method: req.method,
-      statusCode: enrichedError.statusCode
+      statusCode: enrichedError.statusCode,
     });
   }
 

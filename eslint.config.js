@@ -1,24 +1,26 @@
-import js from '@eslint/js';
 import globals from 'globals';
-import prettierConfig from 'eslint-config-prettier';
+import pluginJs from '@eslint/js';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
+/** @type {import('eslint').Linter.Config[]} */
 export default [
-  js.configs.recommended,
-  prettierConfig,
   {
     languageOptions: {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
       globals: {
+        ...globals.browser,
         ...globals.node,
       },
     },
+  },
+  pluginJs.configs.recommended,
+
+  {
     rules: {
-      'no-unused-vars': 'off',
+      'no-unused-vars': ['off', { argsIgnorePattern: '^_' }],
       'no-console': 'off',
+      'prefer-const': 'error',
     },
   },
-  {
-    ignores: ['node_modules/', 'dist/', 'build/'],
-  },
+
+  eslintConfigPrettier,
 ];

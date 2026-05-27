@@ -192,7 +192,7 @@ export const updateMyPassword = catchAsync(async (req, res) => {
   });
 });
 
-export const requestAccountVerification = catchAsync(async (req, res) => {
+export const requestActivationToken = catchAsync(async (req, res) => {
   await userService.generateAndSendOtp(req.user.id, 'ACCOUNT_VERIFICATION');
 
   return resfc({
@@ -223,7 +223,7 @@ export const verifyAccount = catchAsync(async (req, res) => {
   });
 });
 
-export const requestEmailChange = catchAsync(async (req, res) => {
+export const updateEmailRequest = catchAsync(async (req, res) => {
   const { newEmail } = req.body;
 
   await userService.generateAndSendOtp(req.user.id, 'EMAIL_CHANGE', {
@@ -237,7 +237,7 @@ export const requestEmailChange = catchAsync(async (req, res) => {
   });
 });
 
-export const verifyEmailChange = catchAsync(async (req, res) => {
+export const verifyEmailUpdate = catchAsync(async (req, res) => {
   const { token } = req.body;
 
   if (!token) {
