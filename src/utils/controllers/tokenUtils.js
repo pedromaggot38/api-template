@@ -15,9 +15,13 @@ export const signAccessToken = (id) => {
  * @param {string} id - ID do usuário
  */
 export const signRefreshToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
-  });
+  return jwt.sign(
+    { id, jti: crypto.randomUUID() },
+    process.env.JWT_REFRESH_SECRET,
+    {
+      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
+    },
+  );
 };
 
 /**

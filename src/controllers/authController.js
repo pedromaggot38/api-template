@@ -6,6 +6,7 @@ import {
   clearRefreshTokenCookie,
   setRefreshTokenCookie,
 } from '../utils/controllers/cookieUtils.js';
+import AppError from '../utils/appError.js';
 
 export const checkSystemSetup = catchAsync(async (req, res, next) => {
   const isInitialized = await userService.hasAnyUser();
@@ -23,6 +24,12 @@ export const checkSystemSetup = catchAsync(async (req, res, next) => {
 });
 
 export const setupFirstRoot = catchAsync(async (req, res, next) => {
+  const isInitialized = await userService.hasAnyUser();
+
+  if (isInitialized) {
+    throw new AppError('O sistema já possui um usuário root configurado.', 400);
+  }
+
   const clientInfo = {
     ip: req.ip || req.connection.remoteAddress,
     device: req.headers['user-agent'] || 'Unknown',

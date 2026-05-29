@@ -108,14 +108,16 @@ export const refreshSession = async (refreshTokenInput) => {
 export const revokeSession = async (refreshTokenInput) => {
   if (!refreshTokenInput) return;
 
-  await db.refreshToken.deleteMany({
+  await db.refreshToken.updateMany({
     where: { token: refreshTokenInput },
+    data: { revoked: true },
   });
 };
 
 export const invalidateAllUserSessions = async (userId) => {
-  await db.refreshToken.deleteMany({
+  await db.refreshToken.updateMany({
     where: { userId },
+    data: { revoked: true },
   });
 };
 

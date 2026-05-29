@@ -15,7 +15,16 @@ app.use(
   helmet({
     hsts: process.env.NODE_ENV === 'production',
     contentSecurityPolicy:
-      process.env.NODE_ENV === 'production' ? undefined : false,
+      process.env.NODE_ENV === 'production'
+        ? {
+            directives: {
+              defaultSrc: ["'self'"],
+              scriptSrc: ["'self'", "'unsafe-inline'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              imgSrc: ["'self'", 'data:', 'https://validator.swagger.io'],
+            },
+          }
+        : false,
     crossOriginEmbedderPolicy: false,
   }),
 );
