@@ -115,8 +115,8 @@ Este é um template pronto para produção, construído sobre o ecossistema **No
 
 | Rota               | Método | Descrição                                                                                                 |    Tipo     |
 | :----------------- | :----: | :-------------------------------------------------------------------------------------------------------- | :---------: |
-| `/setup/status`    | `GET`  | Verifica se o sistema já possui um usuário soberano (`root`) configurado ou se está virgem.               | **Pública** |
-| `/setup/root`      | `POST` | Inicializa a plataforma criando o primeiro usuário obrigatoriamente com o nível de acesso `root`.         | **Pública** |
+| `/setup`           | `GET`  | Verifica se o sistema já possui um usuário soberano (`root`) configurado ou se está virgem.               | **Pública** |
+| `/setup`           | `POST` | Inicializa a plataforma criando o primeiro usuário obrigatoriamente com o nível de acesso `root`.         | **Pública** |
 | `/signup`          | `POST` | Criação de conta padrão para novos usuários comuns da plataforma.                                         | **Pública** |
 | `/signin`          | `POST` | Autentica o usuário por username/senha, gerando os tokens JWT e salvando o Refresh Token nos cookies.     | **Pública** |
 | `/refresh`         | `POST` | Consome o Refresh Token armazenado no cookie para renovar e emitir um novo `accessToken` válido.          | **Pública** |

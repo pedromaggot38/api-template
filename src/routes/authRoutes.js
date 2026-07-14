@@ -11,13 +11,10 @@ import { authLimiter } from '../middlewares/rateLimiter.js';
 
 const router = express.Router();
 
-router.get('/setup/status', authController.checkSystemSetup);
-router.post(
-  '/setup/root',
-  authLimiter,
-  validate(registerSchema),
-  authController.setupFirstRoot,
-);
+router
+  .route('/setup')
+  .get(authController.checkSystemSetup)
+  .post(authLimiter, validate(registerSchema), authController.setupFirstRoot);
 
 router.post(
   '/signup',
