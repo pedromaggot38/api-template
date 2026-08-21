@@ -89,7 +89,6 @@ export const updateUserSchema = userBaseFields
 export const updateMeSchema = userBaseFields
   .pick({
     name: true,
-    email: true,
     username: true,
     avatar: true,
     phone: true,
@@ -100,7 +99,7 @@ export const updateMyPasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Senha atual é obrigatória'),
     newPassword: userBaseFields.shape.password,
-    passwordConfirm: userBaseFields.shape.passwordConfirm,
+    passwordConfirm: userBaseFields.shape.password,
   })
   .refine((data) => data.newPassword === data.passwordConfirm, {
     message: 'As senhas não coincidem',
@@ -138,7 +137,7 @@ export const resetPasswordSchema = z
       .trim()
       .transform(sanitizeString),
     password: userBaseFields.shape.password,
-    passwordConfirm: userBaseFields.shape.passwordConfirm,
+    passwordConfirm: userBaseFields.shape.password,
   })
   .refine((data) => data.password === data.passwordConfirm, {
     message: 'As senhas não coincidem',
