@@ -77,7 +77,7 @@ await fastify.register(fastifySwagger, {
 });
 
 await fastify.register(fastifySwaggerUi, {
-  routePrefix: '/api-docs',
+  routePrefix: '/docs',
 });
 await fastify.register(apiRoutes, { prefix: '/api/v1' });
 

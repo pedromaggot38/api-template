@@ -1,62 +1,79 @@
-# 🚀 Node.js Backend Template - Advanced Node.js, Express & Prisma Architecture
+# 🚀 API Template - Fastify, Prisma & PostgreSQL
 
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white) ![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white) ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white) ![Fastify](https://img.shields.io/badge/Fastify-000000?style=for-the-badge&logo=fastify&logoColor=white) ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
-Este é um template pronto para produção, construído sobre o ecossistema **Node.js**, **Express**, e **Prisma ORM** com **PostgreSQL**. Projetado sob princípios de arquitetura limpa, segurança rígida e gerenciamento hierárquico de acessos, ele serve como a fundação definitiva para aplicações de alta escalabilidade.
+Um template robusto, escalável e de alto desempenho para construção de APIs RESTful utilizando a stack moderna do ecossistema Node.js.
+
+Projetado com base nas melhores práticas de arquitetura limpa, segurança e performance, o projeto utiliza **Fastify** para máximo throughput e baixo consumo de memória, **Prisma ORM** com **PostgreSQL** para persistência relacional confiável, além de validação estrita via **TypeBox** e documentação automatizada via **Swagger**.
+
+---
 
 ## 🛠️ Tecnologias Utilizadas
 
 - **Runtime**: Node.js (ES Modules)
-- **Framework**: Express
-- **ORM**: Prisma (suporta PostgreSQL, MySQL, SQLite, etc.)
-- **Segurança**: JSON Web Token (JWT) e Bcryptjs para hashing de senhas
-- **Validação**: Zod para esquemas de dados rigorosos
+- **Framework Web**: Fastify
+- **ORM**: Prisma (PostgreSQL)
+- **Validação de Schemas**: TypeBox (Integração nativa com os hooks e compilador do Fastify)
+- **Documentação Interativa**: Fastify Swagger & Swagger UI (OpenAPI 3.0 com examples)
+- **Upload de Arquivos**: Fastify Multipart via streams assíncronos (sem uso de memória buffer desnecessária)
+- **Segurança**: JSON Web Token (JWT), Cookies HttpOnly e Bcryptjs para hashing seguro de senhas
 - **Containerização**: Docker & Docker Compose
 
 ---
 
 ## 🚀 Funcionalidades Principais
 
-### 🛡️ Segurança e Autenticação
+### 🛡️ Autenticação Avançada e RBAC
 
-- **Autenticação Avançada:** Fluxo completo baseado em JWT contendo `accessToken` (curto prazo) e `refreshToken` (longo prazo estruturado em tabela e persistido via cookies seguros).
-- **Gerenciamento de Sessões:** Invalidação centralizada de todas as sessões ativas de um usuário em eventos críticos (como redefinição de senha).
-- **Proteção Criptográfica Automatizada:** Extensão do Prisma Client (`$extends`) que intercepta, valida e hasheia de forma transparente o campo `password` em qualquer gatilho de persistência.
-- **Mecanismo Criptográfico de OTP:** Geração de tokens de uso único (OTP) estritos de exatamente 6 dígitos numéricos baseados no módulo nativo `crypto.randomInt` do Node.js, erradicando a previsibilidade estatística e riscos de colisão inerentes ao `Math.random()`.
-- **Rate Limiting Restritivo:** Middleware `authLimiter` acoplado nativamente nas rotas de `login`, `register`, `forgot-password` e `reset-password` para mitigação de ataques de força bruta, enumeração e DoS por exaustão de processamento do Bcrypt.
+- **Setup Inicial do Sistema:** Verificação e criação do primeiro usuário do sistema (forçado como `root`) através de rotas dedicadas de setup.
+- **Fluxo de Sessão Completo:** Autenticação baseada em JWT com `accessToken` de curta duração e `refreshToken` persistido em banco de dados e gerenciado com segurança via cookies.
+- **Recuperação de Acesso e Verificações:** Fluxo de ativação de conta, troca de e-mail e redefinição de senha com tokens numéricos OTP gerados com tempo de expiração e enviados por e-mail.
+- **Controle de Permissões (RBAC):** Níveis de privilégio estruturados com middleware de proteção e restrição granular de rotas.
 
-### 👑 Controle de Acesso Baseado em Hierarquia (RBAC)
+### ⚡ Performance e Tratamento Centralizado
 
-- **Validação de Escopo:** Sistema inteligente de validação de papéis em rotas administrativas (`validateRoleHierarchy`), distinguindo de forma transparente ações executadas em perfil próprio (`/me`) de alterações operadas em terceiros.
-- **Proteção contra Abuso de Poder:** Travas lógicas explícitas que impedem usuários com privilégios de mesmo nível (ex: `admin` editando outro `admin`) ou inferiores de alterarem credenciais superiores (`root`).
-
-### ⚙️ Engenharia e Infraestrutura
-
-- **Validação Rígida de Dados:** Esquemas de requisição e payload controlados e higienizados de ponta a ponta via **Zod Validation**.
-- **Tratamento Global de Erros:** Middleware centralizado para interceptação de exceções síncronas/assíncronas com tratamento elegante via classe customizada `AppError`.
-- **Conteinerização Isolada:** Ambiente 100% conteinerizado via **Docker** e **Docker Compose**, embarcando o runtime do Node.js e instâncias isoladas do banco PostgreSQL prontas para desenvolvimento ou deploy.
-- **Documentação Viva:** Swagger UI acoplado nativamente com mapeamento modularizado de rotas e schemas de payloads em formato JSON.
+- **Validação Estrita em Tempo de Execução:** Validação e higienização automática de `body`, `querystring` e `params` diretamente na camada de rotas via schemas TypeBox.
+- **Upload via Streams:** Processamento direto no disco para avatares e imagens estáticas, prevenindo travamento do event loop e vazamentos de memória por uploads pesados.
+- **Paginação Genérica (`paginate`):** Utilitário dinâmico acoplado ao Prisma para padronização de paginação (`page`, `limit`, `skip`, `take`, ordenação e contagem agregada).
+- **Sanitização de Payloads (`resfc`):** Padronização de respostas JSON (`status`, `message`, `data`, `meta`) com remoção automática recursiva de campos sensíveis (como `password`).
+- **ErrorHandler Centralizado:** Captura e tradução de erros de validação do Fastify e falhas operacionais conhecidas do Prisma (`P2002`, `P2025`, `P2003`, `P2000`).
 
 ---
 
 ## 🛠️ Arquitetura de Pastas
 
 ```text
-├── prisma/
-│   ├── migrations/          # Histórico de evolução e versionamento do banco
-│   └── schema.prisma        # Modelagem de dados e definições de tabelas
-├── src/
-│   ├── config/              # Inicialização de banco, swagger e multer
-│   ├── controllers/         # Interceptadores de requisições e retornos HTTP
-│   ├── docs/                # Arquivos JSON de especificação do Swagger
-│   ├── middlewares/         # Filtros de autenticação, error handler, rate-limit e validação Zod
-│   ├── models/              # Schemas de validação e regras de campos (Zod)
-│   ├── routes/              # Roteamento e desacoplamento de endpoints
-│   ├── services/            # Camada isolada com as regras de negócio centrais
-│   ├── templates/           # Templates estruturados de e-mails do sistema
-│   ├── utils/               # Funções utilitárias e ferramentas criptográficas
-│   ├── app.js               # Configuração express, middlewares globais e rotas
-│   └── server.js            # Inicialização do servidor HTTP e escuta de portas
+api-template/
+├── prisma/                  # Configurações e migrações do Prisma ORM
+│   ├── migrations/          # Histórico de versionamento do banco de dados
+│   ├── migration_lock.toml  # Lock de controle do Prisma
+│   └── schema.prisma        # Modelagem das entidades relacionais
+├── src/                     # Código-fonte principal da aplicação
+│   ├── config/              # Instâncias de banco de dados e plugins
+│   ├── controllers/         # Orquestração das requisições e respostas HTTP
+│   ├── middlewares/         # Interceptadores (Autenticação, Upload, Error Handler)
+│   ├── models/              # Schemas de validação estrita (TypeBox)
+│   ├── routes/              # Mapeamento e definição de todos os endpoints
+│   ├── services/            # Camada de regras de negócio e persistência
+│   ├── templates/           # Templates de e-mail em HTML (OTP, Ativação)
+│   ├── utils/               # Utilitários de paginação, formatação, tokens e logging
+│   ├── app.js               # Instância do Fastify, hooks e registro de plugins
+│   └── server.js            # Ponto de entrada que levanta o servidor HTTP
+├── uploads/                 # Diretório local para armazenamento de arquivos
+├── .dockerignore            # Arquivos ignorados na criação da imagem Docker
+├── .env                     # Variáveis de ambiente sensíveis (ignorado no Git)
+├── .env.example             # Template público das variáveis de ambiente
+├── .gitignore               # Arquivos e diretórios ignorados no controle de versão
+├── .prettierrc              # Regras de formatação do código
+├── docker-compose.yml       # Orquestração dos serviços (API + PostgreSQL)
+├── Dockerfile               # Instruções de build da imagem da aplicação
+├── entrypoint.sh            # Script de inicialização executado dentro do container
+├── eslint.config.js         # Padronização e qualidade de código
+├── jsconfig.json            # Configuração de caminhos absolutos para o IntelliSense
+├── package-lock.json        # Árvore de dependências exatas
+├── package.json             # Metadados do projeto, scripts e dependências
+├── prisma.config.js         # Configurações adicionais de inicialização do Prisma
+└── README.md                # Documentação central do projeto
 ```
 
 ---
@@ -65,89 +82,104 @@ Este é um template pronto para produção, construído sobre o ecossistema **No
 
 ### 📋 Pré-requisitos
 
-- **Docker** e **Docker Compose** instalados localmente.
-- Gerenciador de pacotes **npm** (ou yarn).
+- **Node.js** (v24) instalado localmente (para execução manual).
+- **Docker** e **Docker Compose** instalados (recomendado).
 
 ### 🔧 Instalação e Execução
 
 1. **Clone o Repositório:**
 
    ```bash
-   git clone https://github.com/pedromaggot38/api-template
+   git clone https://github.com/pedromaggot38/api-template.git
    cd api-template
    ```
 
 2. **Configure as Variáveis de Ambiente:**
-   Copie o arquivo de exemplo e ajuste as credenciais conforme seu ambiente:
+   Copie o arquivo de exemplo e ajuste as credenciais de banco, portas, secrets de JWT e configurações de SMTP:
 
    ```bash
    cp .env.example .env
    ```
 
-3. **Suba o Ambiente via Docker:**
-   O compose cuidará do provisionamento do banco de dados e da inicialização da API automaticamente:
+3. **Executando Localmente:**
 
    ```bash
-   docker-compose up --build
+   # Instale as dependências
+   npm install
+
+   # Gere o Prisma Client e rode as migrações
+   npx prisma generate
+   npx prisma migrate dev
+
+   # Inicie a aplicação em modo desenvolvimento
+   npm run dev
    ```
 
-   A API estará disponível por padrão em `http://localhost:3000`.
+4. **Executando via Docker:**
 
-4. **Documentação da API:**
-   Acesse a interface interativa do Swagger para testar os endpoints em:
-   ```text
-   http://localhost:3000/api-docs
+   ```bash
+   docker compose up --build
    ```
 
----
-
-## 🔒 Segurança & Boas Práticas Incorporadas
-
-- **Validação Cruzada Segura:** Fluxo de redefinição de senha (`resetUserPassword`) otimizado para buscar o usuário estritamente através do hash do token único e ativo, eliminando dependências redundantes do payload e mitigando furos de enumeração.
-- **Garantia de Não-Redundância:** Validações profundas via `bcrypt.compare` aplicadas tanto no fluxo de atualização interna de credenciais (`updateMyPassword`) quanto no reset de senha para impedir que contas sejam sobrescritas com strings idênticas às senhas correntes.
-- **Tratamento Assíncrono Seguro:** Roteamentos encapsulados pelo wrapper utilitário `catchAsync`, eliminando a necessidade de blocos repetitivos `try/catch` nos controladores e assegurando que rejeições de Promises sejam repassadas de forma confiável para o barramento do Express.
+A API estará disponível por padrão em `http://localhost:3000`.
 
 ---
 
-### 🌐 Mapeamento de Rotas da API
+## 📚 Documentação da API (Swagger)
 
-#### 🔐 1. Rotas de Autenticação (`/api/v1/auth`)
+A documentação interativa OpenAPI/Swagger é construída e exposta nativamente em tempo de execução.
 
-| Rota               | Método | Descrição                                                                                                 |    Tipo     |
-| :----------------- | :----: | :-------------------------------------------------------------------------------------------------------- | :---------: |
-| `/setup`           | `GET`  | Verifica se o sistema já possui um usuário soberano (`root`) configurado ou se está virgem.               | **Pública** |
-| `/setup`           | `POST` | Inicializa a plataforma criando o primeiro usuário obrigatoriamente com o nível de acesso `root`.         | **Pública** |
-| `/signup`          | `POST` | Criação de conta padrão para novos usuários comuns da plataforma.                                         | **Pública** |
-| `/signin`          | `POST` | Autentica o usuário por username/senha, gerando os tokens JWT e salvando o Refresh Token nos cookies.     | **Pública** |
-| `/refresh`         | `POST` | Consome o Refresh Token armazenado no cookie para renovar e emitir um novo `accessToken` válido.          | **Pública** |
-| `/signout`         | `POST` | Invalida a sessão atual no banco de dados e limpa os cookies de Refresh Token do navegador.               | **Pública** |
-| `/forgot-password` | `POST` | Solicita a recuperação de conta gerando e enviando um OTP seguro de 6 dígitos via e-mail.                 | **Pública** |
-| `/reset-password`  | `POST` | Consome o OTP ativo do banco e redefine a senha do usuário, forçando o logout de todas as outras sessões. | **Pública** |
+Com o servidor rodando, acesse no navegador:
+
+- **Swagger UI**: `http://localhost:3000/docs`
 
 ---
 
-#### 👤 2. Rotas do Perfil Pessoal (`/api/v1/me`)
+## 🌐 Mapeamento Completo de Rotas da API
 
-| Rota          | Método  | Descrição                                                                                     |    Tipo     |
-| :------------ | :-----: | :-------------------------------------------------------------------------------------------- | :---------: |
-| `/`           |  `GET`  | Retorna as informações detalhadas sobre a conta do usuário logado.                            | **Privada** |
-| `/`           | `PATCH` | Atualiza dados cadastrais próprios. Suporta payload híbrido (JSON ou upload de avatar).       | **Privada** |
-| `/password`   | `PATCH` | Altera a senha do próprio usuário logado, exigindo a confirmação da senha atual.              | **Privada** |
-| `/activation` | `POST`  | Solicita o envio de um novo código OTP para ativação/verificação da conta atual.              | **Privada** |
-| `/activation` | `PATCH` | Valida o código OTP enviado e efetiva a ativação/verificação da conta no banco de dados.      | **Privada** |
-| `/email`      | `POST`  | Inicia a troca de e-mail enviando um token OTP para o e-mail pretendido.                      | **Privada** |
-| `/email`      | `PATCH` | Confirma o OTP enviado ao novo endereço e efetiva a alteração do e-mail principal no banco.   | **Privada** |
-| `/deactivate` | `PATCH` | Desativa a própria conta mudando o status para `deactivated` mediante envio da senha correta. | **Privada** |
+### 🔐 1. Autenticação (`/api/v1/auth`)
+
+Gerencia setup inicial, credenciais, sessões e fluxos de recuperação de senha. Rotas **públicas**.
+
+| Rota               | Método  | Descrição                                                           |
+| :----------------- | :-----: | :------------------------------------------------------------------ |
+| `/setup`           |  `GET`  | Verifica se o sistema já possui um usuário `root` configurado.      |
+| `/setup`           | `POST`  | Cria o primeiro usuário do sistema (forçado com privilégio `root`). |
+| `/register`        | `POST`  | Cadastro padrão de novos usuários no sistema.                       |
+| `/login`           | `POST`  | Autentica o usuário e retorna `accessToken` e cookies de sessão.    |
+| `/logout`          | `POST`  | Encerra a sessão e revoga o token de refresh.                       |
+| `/refresh-token`   | `POST`  | Emite um novo `accessToken` utilizando o Refresh Token ativo.       |
+| `/forgot-password` | `POST`  | Envia um código OTP para o e-mail para redefinição de senha.        |
+| `/reset-password`  | `PATCH` | Redefine a senha utilizando o código OTP validado.                  |
 
 ---
 
-#### 👑 3. Rotas do Painel Administrativo (`/api/v1/users`)
+### 👤 2. Perfil do Usuário Logado (`/api/v1/me`)
 
-| Rota                       |  Método  | Descrição                                                                                          |             Tipo              |
-| :------------------------- | :------: | :------------------------------------------------------------------------------------------------- | :---------------------------: |
-| `/`                        |  `GET`   | Lista de forma paginada e com suporte a filtros de busca os usuários cadastrados na plataforma.    | **Privada** (`admin`, `root`) |
-| `/`                        |  `POST`  | Cria um novo usuário pré-verificado e ativo direto com o cargo definido, respeitando a hierarquia. | **Privada** (`admin`, `root`) |
-| `/{identifier}`            |  `GET`   | Localiza e exibe os detalhes de um usuário específico por ID, Username ou E-mail.                  | **Privada** (`admin`, `root`) |
-| `/{identifier}`            | `PATCH`  | Atualiza permissões, status e dados de terceiros respeitando restrições hierárquicas.              | **Privada** (`admin`, `root`) |
-| `/{identifier}`            | `DELETE` | Remove permanentemente um usuário do banco e invalida todas as suas sessões vinculadas.            |  **Privada** (`root` apenas)  |
-| `/{identifier}/deactivate` | `PATCH`  | Força a desativação administrativa da conta de um terceiro sem necessidade de fornecer senhas.     | **Privada** (`admin`, `root`) |
+Gerenciamento das informações da própria conta. Requer autenticação (`protect`).
+
+| Rota          | Método  | Descrição                                                                     |
+| :------------ | :-----: | :---------------------------------------------------------------------------- |
+| `/`           |  `GET`  | Retorna os dados completos do perfil do usuário logado.                       |
+| `/`           | `PATCH` | Atualiza dados cadastrais e realiza upload de avatar (`multipart/form-data`). |
+| `/password`   | `PATCH` | Altera a senha atual da conta.                                                |
+| `/activation` | `POST`  | Solicita novo envio de código OTP para ativação de conta.                     |
+| `/activation` | `PATCH` | Valida o código OTP e ativa a conta no sistema.                               |
+| `/email`      | `POST`  | Solicita alteração de e-mail (envia OTP de confirmação).                      |
+| `/email`      | `PATCH` | Valida o OTP e atualiza o endereço de e-mail.                                 |
+| `/deactivate` | `PATCH` | Desativa temporariamente a própria conta.                                     |
+
+---
+
+### 👥 3. Gestão Administrativa de Usuários (`/api/v1/users`)
+
+Módulo administrativo para gerenciamento de contas. Requer privilégios elevados.
+
+| Rota                       |  Método  | Descrição                                                 |    Restrição    |
+| :------------------------- | :------: | :-------------------------------------------------------- | :-------------: |
+| `/`                        |  `GET`   | Lista usuários de forma paginada com filtros e ordenação. | `admin`, `root` |
+| `/`                        |  `POST`  | Criação manual de usuário com definição de cargo/status.  | `admin`, `root` |
+| `/{id}`                    |  `GET`   | Busca detalhes completos de um usuário específico por ID. | `admin`, `root` |
+| `/{id}`                    | `PATCH`  | Atualiza cadastros e status de contas de terceiros.       | `admin`, `root` |
+| `/{id}`                    | `DELETE` | Remove ou desativa permanentemente o registro do usuário. |  `root` apenas  |
+| `/{identifier}/deactivate` | `PATCH`  | Desativa administrativamente a conta de um terceiro.      | `admin`, `root` |
