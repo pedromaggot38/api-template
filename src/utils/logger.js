@@ -1,31 +1,46 @@
-import winston from 'winston';
-import 'winston-daily-rotate-file';
+import pino from 'pino';
 
-const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json(),
-  ),
-  transports: [
-    new winston.transports.DailyRotateFile({
-      filename: 'logs/error-%DATE%.log',
-      level: 'error',
-      maxFiles: '14d',
-    }),
-    new winston.transports.DailyRotateFile({
-      filename: 'logs/combined-%DATE%.log',
-      maxFiles: '14d',
-    }),
+const logger = pino({
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  redact: [
+    'req.headers.authorization',
+    'body.password',
+    'body.token',
+    'body.otp',
   ],
+  transport: {
+    targets: [
+      {
+        target: 'pino-pretty',
+        level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+        options: {
+          colorize: true,
+          translateTime: 'HH:MM:ss Z',
+          ignore: 'pid,hostname',
+        },
+      },
+      {
+        target: 'pino-roll',
+        level: 'info',
+        options: {
+          file: './logs/app',
+          frequency: 'daily',
+          size: '20m',
+          mkdir: true,
+        },
+      },
+      {
+        target: 'pino-roll',
+        level: 'error',
+        options: {
+          file: './logs/error',
+          frequency: 'daily',
+          size: '20m',
+          mkdir: true,
+        },
+      },
+    ],
+  },
 });
-
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(
-    new winston.transports.Console({
-      format: winston.format.simple(),
-    }),
-  );
-}
 
 export default logger;

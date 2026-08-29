@@ -310,6 +310,7 @@ export const generateAndSendOtp = async (userId, reason, options = {}) => {
       await sendEmail({ to: targetEmail, subject, html });
     } catch (error) {
       logger.error(
+        error,
         `[SMTP-FORGOT] Falha mascarada no envio de recuperação para ${targetEmail}`,
       );
     }

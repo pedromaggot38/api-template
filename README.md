@@ -44,6 +44,7 @@ Projetado com base nas melhores práticas de arquitetura limpa, segurança e per
 
 ```text
 api-template/
+├── logs/                    # Arquivos de log gerados pela aplicação
 ├── prisma/                  # Configurações e migrações do Prisma ORM
 │   ├── migrations/          # Histórico de versionamento do banco de dados
 │   ├── migration_lock.toml  # Lock de controle do Prisma

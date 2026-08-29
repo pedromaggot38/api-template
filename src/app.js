@@ -12,12 +12,13 @@ import { errorHandler } from './middlewares/errorHandler.js';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
 import AppError from './utils/appError.js';
+import logger from './utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const fastify = Fastify({
-  logger: true,
+  loggerInstance: logger,
   routerOptions: {
     ignoreTrailingSlash: true,
   },
