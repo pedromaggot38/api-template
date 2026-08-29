@@ -1,18 +1,20 @@
-import catchAsync from '../utils/catchAsync.js';
+import { sanitizeString, normalizeInput } from '../utils/sanitize.js';
 import * as authService from '../services/authService.js';
 import * as userService from '../services/userService.js';
 import { resfc } from '../utils/resfc.js';
 import {
   clearRefreshTokenCookie,
   setRefreshTokenCookie,
+  setAccessTokenCookie,
+  clearAccessTokenCookie,
 } from '../utils/controllers/cookieUtils.js';
 import AppError from '../utils/appError.js';
 
-export const checkSystemSetup = catchAsync(async (req, res, next) => {
-  const isInitialized = await userService.hasAnyUser();
+export const checkSystemSetup = async (request, reply) => {
+  const isInitialized = await userService.hasAnyRoot();
 
   return resfc({
-    res,
+    reply,
     code: 200,
     data: {
       initialized: isInitialized,
@@ -21,70 +23,95 @@ export const checkSystemSetup = catchAsync(async (req, res, next) => {
       ? 'O sistema já possui um usuário root configurado.'
       : 'Sistema virgem. Pronto para configuração inicial.',
   });
-});
+};
 
-export const setupFirstRoot = catchAsync(async (req, res, next) => {
-  const isInitialized = await userService.hasAnyUser();
+export const setupFirstRoot = async (request, reply) => {
+  const isInitialized = await userService.hasAnyRoot();
 
   if (isInitialized) {
     throw new AppError('O sistema já possui um usuário root configurado.', 400);
   }
 
-  const clientInfo = {
-    ip: req.ip || req.connection.remoteAddress,
-    device: req.headers['user-agent'] || 'Unknown',
+  const { password, passwordConfirm, name, username, email, ...rest } =
+    request.body;
+
+  if (password !== passwordConfirm) {
+    throw new AppError('As senhas não coincidem.', 400);
+  }
+
+  const userData = {
+    ...rest,
+    password,
+    name: sanitizeString(name),
+    username: normalizeInput(username),
+    email: normalizeInput(email),
   };
 
-  const { passwordConfirm, ...userData } = req.body;
+  const clientInfo = {
+    ip: request.ip,
+    device: request.headers['user-agent'] || 'Unknown',
+  };
 
   const rootUser = await userService.createFirstRootUser(userData);
 
   const { accessToken, refreshToken } =
     await authService.generateNewSessionDirectly(rootUser.id, clientInfo);
 
-  setRefreshTokenCookie(res, req, refreshToken);
+  setRefreshTokenCookie(reply, request, refreshToken);
+  setAccessTokenCookie(reply, request, accessToken);
 
   return resfc({
-    res,
+    reply,
     code: 201,
-    data: {
-      user: rootUser,
-      accessToken,
-      refreshToken,
-    },
+    data: { user: rootUser, accessToken, refreshToken },
     message: 'Sistema inicializado com sucesso! Usuário Root criado.',
   });
-});
+};
 
-export const signup = catchAsync(async (req, res, next) => {
-  const clientInfo = {
-    ip: req.ip || req.connection.remoteAddress,
-    device: req.headers['user-agent'] || 'Unknown',
+export const signup = async (request, reply) => {
+  const { password, passwordConfirm, name, username, email, ...rest } =
+    request.body;
+
+  if (password !== passwordConfirm) {
+    throw new AppError('As senhas não coincidem.', 400);
+  }
+
+  const userData = {
+    ...rest,
+    password,
+    name: sanitizeString(name),
+    username: normalizeInput(username),
+    email: normalizeInput(email),
   };
 
-  const { passwordConfirm, ...userData } = req.body;
+  const clientInfo = {
+    ip: request.ip,
+    device: request.headers['user-agent'] || 'Unknown',
+  };
 
   const { user, accessToken, refreshToken } = await authService.register(
     userData,
     clientInfo,
   );
 
-  setRefreshTokenCookie(res, req, refreshToken);
+  setRefreshTokenCookie(reply, request, refreshToken);
+  setAccessTokenCookie(reply, request, accessToken);
 
   return resfc({
-    res,
+    reply,
     code: 201,
     data: { user, accessToken, refreshToken },
   });
-});
+};
 
-export const signin = catchAsync(async (req, res, next) => {
+export const signin = async (request, reply) => {
   const clientInfo = {
-    ip: req.ip || req.connection.remoteAddress,
-    device: req.headers['user-agent'] || 'Unknown',
+    ip: request.ip,
+    device: request.headers['user-agent'] || 'Unknown',
   };
 
-  const { username, password } = req.body;
+  const username = normalizeInput(request.body.username);
+  const { password } = request.body;
 
   const { user, accessToken, refreshToken } = await authService.authenticate(
     username,
@@ -92,46 +119,50 @@ export const signin = catchAsync(async (req, res, next) => {
     clientInfo,
   );
 
-  setRefreshTokenCookie(res, req, refreshToken);
+  setRefreshTokenCookie(reply, request, refreshToken);
+  setAccessTokenCookie(reply, request, accessToken);
 
   return resfc({
-    res,
+    reply,
     code: 200,
     data: { user, accessToken, refreshToken },
   });
-});
+};
 
-export const signout = catchAsync(async (req, res, next) => {
+export const signout = async (request, reply) => {
   const incomingRefreshToken =
-    req.cookies.refreshToken || req.body.refreshToken;
+    request.cookies.refreshToken || request.body.refreshToken;
 
   await authService.revokeSession(incomingRefreshToken);
 
-  clearRefreshTokenCookie(res);
+  clearRefreshTokenCookie(reply);
+  clearAccessTokenCookie(reply);
 
   return resfc({
-    res,
+    reply,
     code: 200,
     message: 'Sessão encerrada com sucesso.',
   });
-});
+};
 
-export const refresh = catchAsync(async (req, res, next) => {
+export const refresh = async (request, reply) => {
   const incomingRefreshToken =
-    req.cookies.refreshToken || req.body.refreshToken;
+    request.cookies.refreshToken || request.body.refreshToken;
 
   const { accessToken, user } =
     await authService.refreshSession(incomingRefreshToken);
 
+  setAccessTokenCookie(reply, request, accessToken);
+
   return resfc({
-    res,
+    reply,
     code: 200,
     data: { user, accessToken },
   });
-});
+};
 
-export const forgotPassword = catchAsync(async (req, res, next) => {
-  const { identifier } = req.body;
+export const forgotPassword = async (request, reply) => {
+  const identifier = normalizeInput(request.body.identifier);
 
   const user =
     await userService.findUserByAnyIdentifierWithoutError(identifier);
@@ -143,23 +174,29 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
   }
 
   return resfc({
-    res,
+    reply,
     code: 200,
     message:
       'Se os dados informados forem válidos, você receberá um código em seu e-mail.',
   });
-});
+};
 
-export const resetPassword = catchAsync(async (req, res, next) => {
+export const resetPassword = async (request, reply) => {
   const clientInfo = {
-    ip: req.ip || req.connection.remoteAddress,
-    device: req.headers['user-agent'] || 'Unknown',
+    ip: request.ip,
+    device: request.headers['user-agent'] || 'Unknown',
   };
 
-  const { token, password } = req.body;
+  const { token, password, passwordConfirm } = request.body;
+
+  if (password !== passwordConfirm) {
+    throw new AppError('As senhas não coincidem.', 400);
+  }
+
+  const cleanToken = sanitizeString(token);
 
   const user = await userService.resetUserPassword({
-    token,
+    token: cleanToken,
     password,
   });
 
@@ -168,12 +205,13 @@ export const resetPassword = catchAsync(async (req, res, next) => {
   const { accessToken, refreshToken } =
     await authService.generateNewSessionDirectly(user.id, clientInfo);
 
-  setRefreshTokenCookie(res, req, refreshToken);
+  setRefreshTokenCookie(reply, request, refreshToken);
+  setAccessTokenCookie(reply, request, accessToken);
 
   return resfc({
-    res,
+    reply,
     code: 200,
     message: 'Senha redefinida com sucesso!',
     data: { user, accessToken, refreshToken },
   });
-});
+};

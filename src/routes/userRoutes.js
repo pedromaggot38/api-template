@@ -1,34 +1,58 @@
-import express from 'express';
 import * as userController from '../controllers/userController.js';
 import { protect, restrictTo } from '../middlewares/auth.js';
-import validate from '../middlewares/validate.js';
 import {
   adminCreateUserSchema,
+  identifierParamSchema,
   updateUserSchema,
 } from '../models/userSchema.js';
 
-const router = express.Router();
+export default async function userRoutes(fastify, options) {
+  fastify.addHook('preHandler', protect);
+  fastify.addHook('preHandler', restrictTo('root', 'admin'));
 
-router.use(protect);
+  fastify.get('/', userController.listUsers);
 
-router.use(restrictTo('root', 'admin'));
-
-router
-  .route('/')
-  .get(userController.getAllUsers)
-  .post(
-    protect,
-    restrictTo('admin', 'root'),
-    validate(adminCreateUserSchema),
+  fastify.post(
+    '/',
+    {
+      schema: { body: adminCreateUserSchema },
+    },
     userController.adminCreateUser,
   );
 
-router
-  .route('/:identifier')
-  .get(userController.getUser)
-  .patch(validate(updateUserSchema), userController.update)
-  .delete(restrictTo('root'), userController.deleteUserByAdmin);
+  fastify.get(
+    '/:identifier',
+    {
+      schema: { params: identifierParamSchema },
+    },
+    userController.getUser,
+  );
 
-router.patch('/:identifier/deactivate', userController.deactivateUserByAdmin);
+  fastify.patch(
+    '/:identifier',
+    {
+      schema: {
+        params: identifierParamSchema,
+        body: updateUserSchema,
+      },
+    },
+    userController.update,
+  );
 
-export default router;
+  fastify.delete(
+    '/:identifier',
+    {
+      preHandler: [restrictTo('root')],
+      schema: { params: identifierParamSchema },
+    },
+    userController.deleteUserByAdmin,
+  );
+
+  fastify.patch(
+    '/:identifier/deactivate',
+    {
+      schema: { params: identifierParamSchema },
+    },
+    userController.deactivateUserByAdmin,
+  );
+}

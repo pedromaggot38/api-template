@@ -1,50 +1,67 @@
-import express from 'express';
-import validate from '../middlewares/validate.js';
 import {
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
   resetPasswordSchema,
+  setupSchema,
 } from '../models/userSchema.js';
 import * as authController from '../controllers/authController.js';
-import { authLimiter } from '../middlewares/rateLimiter.js';
 
-const router = express.Router();
+const authLimitConfig = {
+  rateLimit: {
+    max: 8,
+    timeWindow: 60 * 60 * 1000,
+  },
+};
 
-router
-  .route('/setup')
-  .get(authController.checkSystemSetup)
-  .post(authLimiter, validate(registerSchema), authController.setupFirstRoot);
+export default async function authRoutes(fastify, options) {
+  fastify.get('/setup', authController.checkSystemSetup);
 
-router.post(
-  '/signup',
-  authLimiter,
-  validate(registerSchema),
-  authController.signup,
-);
+  fastify.post(
+    '/setup',
+    {
+      config: authLimitConfig,
+      schema: { body: setupSchema },
+    },
+    authController.setupFirstRoot,
+  );
 
-router.post(
-  '/signin',
-  authLimiter,
-  validate(loginSchema),
-  authController.signin,
-);
+  fastify.post(
+    '/signup',
+    {
+      config: authLimitConfig,
+      schema: { body: registerSchema },
+    },
+    authController.signup,
+  );
 
-router.post('/refresh', authController.refresh);
-router.post('/signout', authController.signout);
+  fastify.post(
+    '/signin',
+    {
+      config: authLimitConfig,
+      schema: { body: loginSchema },
+    },
+    authController.signin,
+  );
 
-router.post(
-  '/forgot-password',
-  authLimiter,
-  validate(forgotPasswordSchema),
-  authController.forgotPassword,
-);
+  fastify.post('/refresh', authController.refresh);
+  fastify.post('/signout', authController.signout);
 
-router.post(
-  '/reset-password',
-  authLimiter,
-  validate(resetPasswordSchema),
-  authController.resetPassword,
-);
+  fastify.post(
+    '/forgot-password',
+    {
+      config: authLimitConfig,
+      schema: { body: forgotPasswordSchema },
+    },
+    authController.forgotPassword,
+  );
 
-export default router;
+  fastify.post(
+    '/reset-password',
+    {
+      config: authLimitConfig,
+      schema: { body: resetPasswordSchema },
+    },
+    authController.resetPassword,
+  );
+}

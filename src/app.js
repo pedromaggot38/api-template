@@ -1,64 +1,84 @@
-import hpp from 'hpp';
-import cors from 'cors';
-import helmet from 'helmet';
-import express from 'express';
-import routes from './routes/index.js';
-import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import fastifyCookie from '@fastify/cookie';
+import fastifyMultipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
+import fastifyRateLimit from '@fastify/rate-limit';
+import apiRoutes from './routes/index.js';
+import { errorHandler } from './middlewares/errorHandler.js';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUi from '@fastify/swagger-ui';
 import AppError from './utils/appError.js';
-import errorHandler from './middlewares/errorHandler.js';
-import { apiLimiter } from './middlewares/rateLimiter.js';
-import { swaggerUi, specs, uiOptions } from './config/swagger.js';
 
-const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-app.use(
-  helmet({
-    hsts: process.env.NODE_ENV === 'production',
-    contentSecurityPolicy:
-      process.env.NODE_ENV === 'production'
-        ? {
-            directives: {
-              defaultSrc: ["'self'"],
-              scriptSrc: ["'self'", "'unsafe-inline'"],
-              styleSrc: ["'self'", "'unsafe-inline'"],
-              imgSrc: ["'self'", 'data:', 'https://validator.swagger.io'],
-            },
-          }
-        : false,
-    crossOriginEmbedderPolicy: false,
-  }),
-);
-
-app.disable('x-powered-by');
-
-app.set('trust proxy', true);
-app.use(hpp());
-
-const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
-app.use(express.json());
-app.use(cookieParser());
-
-app.use('/public', express.static('uploads'));
-
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, uiOptions));
-
-app.use('/api/v1', apiLimiter);
-
-app.use('/api/v1', routes);
-
-app.all('{*path}', (req, res, next) => {
-  next(
-    new AppError(`Rota ${req.originalUrl} não encontrada no servidor.`, 404),
-  );
+const fastify = Fastify({
+  logger: true,
+  routerOptions: {
+    ignoreTrailingSlash: true,
+  },
 });
 
-app.use(errorHandler);
+fastify.setErrorHandler(errorHandler);
 
-export default app;
+await fastify.register(cors);
+await fastify.register(helmet);
+await fastify.register(fastifyCookie, {
+  secret: process.env.COOKIE_SECRET,
+});
+
+await fastify.register(fastifyMultipart, {
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+});
+
+await fastify.register(fastifyStatic, {
+  root: path.join(__dirname, '..', 'uploads'),
+  prefix: '/public/',
+});
+
+if (process.env.NODE_ENV === 'production') {
+  await fastify.register(fastifyRateLimit, {
+    max: 500,
+    timeWindow: 15 * 60 * 1000,
+    errorResponseBuilder: (request, context) => {
+      const isAuthRoute = context.max < 15;
+      const message = isAuthRoute
+        ? 'Muitas tentativas de login. Tente novamente em uma hora.'
+        : 'Muitas requisições, tente novamente mais tarde.';
+
+      throw new AppError(message, 429);
+    },
+  });
+}
+
+await fastify.register(fastifySwagger, {
+  openapi: {
+    info: {
+      title: 'API Template',
+      version: '1.0.0',
+      description: 'Documentação da API RESTful',
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+  },
+});
+
+await fastify.register(fastifySwaggerUi, {
+  routePrefix: '/api-docs',
+});
+await fastify.register(apiRoutes, { prefix: '/api/v1' });
+
+export default fastify;

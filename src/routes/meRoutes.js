@@ -1,7 +1,5 @@
-import express from 'express';
 import { protect } from '../middlewares/auth.js';
 import * as userController from '../controllers/userController.js';
-import validate from '../middlewares/validate.js';
 import {
   deactivateMeSchema,
   requestEmailChangeSchema,
@@ -9,37 +7,85 @@ import {
   updateMyPasswordSchema,
   verifyOtpSchema,
 } from '../models/userSchema.js';
-import { uploadAvatar } from '../config/multer.js';
+import { uploadAvatar } from '../middlewares/uploadAvatar.js';
 
-const router = express.Router();
+export default async function meRoutes(fastify, options) {
+  fastify.addHook('preHandler', protect);
 
-router.use(protect);
+  fastify.get('/', userController.getMe);
 
-router
-  .route('/')
-  .get(userController.getMe)
-  .patch(uploadAvatar, validate(updateMeSchema), userController.updateMe);
+  fastify.patch(
+    '/',
+    {
+      preHandler: [uploadAvatar],
+      schema: { body: updateMeSchema },
+      validatorCompiler: ({ schema }) => {
+        return (data) => {
+          if (!data || typeof data !== 'object') {
+            return true;
+          }
 
-router.patch(
-  '/password',
-  validate(updateMyPasswordSchema),
-  userController.updateMyPassword,
-);
+          const isValid = Value.Check(schema, data);
+          if (!isValid) {
+            const errors = [...Value.Errors(schema, data)];
+            return {
+              error: new Error(
+                errors
+                  .map(
+                    (e) =>
+                      `${e.path.replace('/', '') || 'campo'}: ${e.message}`,
+                  )
+                  .join(', '),
+              ),
+            };
+          }
 
-router
-  .route('/activation')
-  .post(userController.requestActivationToken)
-  .patch(validate(verifyOtpSchema), userController.verifyAccount);
+          return true;
+        };
+      },
+    },
+    userController.updateMe,
+  );
 
-router
-  .route('/email')
-  .post(validate(requestEmailChangeSchema), userController.updateEmailRequest)
-  .patch(validate(verifyOtpSchema), userController.verifyEmailUpdate);
+  fastify.patch(
+    '/password',
+    {
+      schema: { body: updateMyPasswordSchema },
+    },
+    userController.updateMyPassword,
+  );
 
-router.patch(
-  '/deactivate',
-  validate(deactivateMeSchema),
-  userController.deactivateMe,
-);
+  fastify.post('/activation', userController.requestActivationToken);
 
-export default router;
+  fastify.patch(
+    '/activation',
+    {
+      schema: { body: verifyOtpSchema },
+    },
+    userController.verifyAccount,
+  );
+
+  fastify.post(
+    '/email',
+    {
+      schema: { body: requestEmailChangeSchema },
+    },
+    userController.updateEmailRequest,
+  );
+
+  fastify.patch(
+    '/email',
+    {
+      schema: { body: verifyOtpSchema },
+    },
+    userController.verifyEmailUpdate,
+  );
+
+  fastify.patch(
+    '/deactivate',
+    {
+      schema: { body: deactivateMeSchema },
+    },
+    userController.deactivateMe,
+  );
+}

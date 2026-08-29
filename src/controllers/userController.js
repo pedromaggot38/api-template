@@ -1,6 +1,6 @@
+import { sanitizeString, normalizeInput } from '../utils/sanitize.js';
 import { resfc } from '../utils/resfc.js';
 import AppError from '../utils/appError.js';
-import catchAsync from '../utils/catchAsync.js';
 import * as userService from '../services/userService.js';
 import * as authService from '../services/authService.js';
 import {
@@ -10,122 +10,148 @@ import {
 import { deleteFile, getFileUrl } from '../utils/fileUpload.js';
 import { validateRoleHierarchy } from '../utils/controllers/userUtils.js';
 
-export const getAllUsers = catchAsync(async (req, res, next) => {
-  const { users, pagination } = await userService.findAllUsers(req.query);
+export const listUsers = async (request, reply) => {
+  const { users, pagination } = await userService.listUsers(request.query);
 
   return resfc({
-    res,
+    reply,
     code: 200,
-    data: { users },
-    results: pagination,
+    data: users,
+    meta: pagination,
+    message: 'Usuários listados com sucesso.',
   });
-});
+};
 
-export const adminCreateUser = catchAsync(async (req, res, next) => {
-  const { passwordConfirm, ...newUserData } = req.body;
+export const adminCreateUser = async (request, reply) => {
+  const { password, passwordConfirm, name, username, email, phone, ...rest } =
+    request.body;
+
+  if (password !== passwordConfirm) {
+    throw new AppError('As senhas não coincidem.', 400);
+  }
+
+  const newUserData = {
+    ...rest,
+    password,
+    name: sanitizeString(name),
+    username: normalizeInput(username),
+    email: normalizeInput(email),
+  };
+
+  if (phone) newUserData.phone = sanitizeString(phone);
 
   const newUser = await userService.createUserByAdmin(
-    req.user.id,
-    req.user.role,
+    request.user.id,
+    request.user.role,
     newUserData,
   );
 
   return resfc({
-    res,
+    reply,
     code: 201,
     message: `Usuário ${newUser.name} criado com sucesso com o cargo [${newUser.role.toUpperCase()}].`,
     data: { user: newUser },
   });
-});
+};
 
-export const getUser = catchAsync(async (req, res, next) => {
-  const { identifier } = req.params;
+export const getUser = async (request, reply) => {
+  const identifier = normalizeInput(request.params.identifier);
 
   const user = await userService.findUserByAnyIdentifier(identifier);
 
   return resfc({
-    res,
+    reply,
     code: 200,
     message: 'Usuário recuperado com sucesso',
     data: { user },
   });
-});
+};
 
-export const deactivateUserByAdmin = catchAsync(async (req, res, next) => {
-  const { identifier } = req.params;
-
+export const deactivateUserByAdmin = async (request, reply) => {
+  const identifier = normalizeInput(request.params.identifier);
   const targetUser = await userService.findUserByAnyIdentifier(identifier);
 
-  validateRoleHierarchy(req.user.role, targetUser.role);
+  validateRoleHierarchy(request.user.role, targetUser.role);
 
   await userService.deactivateUserAccount(targetUser.id);
 
   return resfc({
-    res,
+    reply,
     code: 200,
     message: `A conta do usuário ${targetUser.username} foi desativada com sucesso pelo administrador.`,
   });
-});
+};
 
-export const deleteUserByAdmin = catchAsync(async (req, res, next) => {
-  const { identifier } = req.params;
-
+export const deleteUserByAdmin = async (request, reply) => {
+  const identifier = normalizeInput(request.params.identifier);
   const targetUser = await userService.findUserByAnyIdentifier(identifier);
 
   await authService.invalidateAllUserSessions(targetUser.id);
+  await userService.deleteUser(targetUser.id, request.user.role);
 
-  await userService.deleteUser(targetUser.id, req.user.role);
-
-  return resfc({
-    res,
-    code: 204,
-  });
-});
+  return reply.code(204).send();
+};
 
 // Controllers funcionais para rota /ME
 
-export const update = catchAsync(async (req, res) => {
-  const { identifier } = req.params;
-  const updateData = req.body;
+export const update = async (request, reply) => {
+  const identifier = normalizeInput(request.params.identifier);
+  const updateData = { ...request.body };
+
+  if (updateData.name) updateData.name = sanitizeString(updateData.name);
+  if (updateData.username)
+    updateData.username = normalizeInput(updateData.username);
+  if (updateData.email) updateData.email = normalizeInput(updateData.email);
+  if (updateData.phone) updateData.phone = sanitizeString(updateData.phone);
 
   const { user, wasUpdated } = await userService.updateUser(
     identifier,
     updateData,
-    req.user.role,
-    req.user.id,
+    request.user.role,
+    request.user.id,
   );
 
   return resfc({
-    res,
+    reply,
     code: 200,
     data: { user },
     message: wasUpdated ? 'Usuário atualizado com sucesso!' : 'Sem alterações.',
   });
-});
+};
 
-export const getMe = catchAsync(async (req, res, next) => {
-  const user = await userService.findUserByAnyIdentifier(req.user.id);
+export const getMe = async (request, reply) => {
+  const user = await userService.findUserByAnyIdentifier(request.user.id);
 
   return resfc({
-    res,
+    reply,
     code: 200,
     data: { user },
     message: 'Perfil recuperado com sucesso',
   });
-});
+};
 
-export const updateMe = catchAsync(async (req, res, next) => {
-  const currentUser = req.user;
+export const updateMe = async (request, reply) => {
+  const currentUser = request.user;
+  const body = request.body || {};
 
-  if (Object.keys(req.body).length === 0 && !req.file) {
+  const hasUploadedFile = Boolean(request.file && request.file.filename);
+
+  if (Object.keys(body).length === 0 && !hasUploadedFile) {
     throw new AppError('Envie ao menos um campo para atualização.', 400);
   }
 
-  const updateData = { ...req.body };
+  const updateData = { ...body };
+
+  if (updateData.name) updateData.name = sanitizeString(updateData.name);
+  if (updateData.username)
+    updateData.username = normalizeInput(updateData.username);
+  if (updateData.phone) updateData.phone = sanitizeString(updateData.phone);
+
   let newFileUrl = null;
 
-  if (req.file) {
-    newFileUrl = getFileUrl(req.file, 'avatars');
+  // Só gera URL local se houver um arquivo real processado
+  if (hasUploadedFile) {
+    newFileUrl = getFileUrl(request.file, 'avatars');
     updateData.avatar = newFileUrl;
   }
 
@@ -153,121 +179,130 @@ export const updateMe = catchAsync(async (req, res, next) => {
     if (
       avatarWasChanged &&
       currentUser.avatar &&
-      currentUser.avatar.startsWith('/public/')
+      currentUser.avatar.startsWith('/public/') &&
+      currentUser.avatar !== newFileUrl
     ) {
       deleteFile(currentUser.avatar);
     }
   }
 
   return resfc({
-    res,
+    reply,
     code: 200,
     data: { user },
     message: wasUpdated ? 'Perfil atualizado com sucesso!' : 'Sem alterações.',
   });
-});
+};
 
-export const updateMyPassword = catchAsync(async (req, res) => {
+export const updateMyPassword = async (request, reply) => {
   const clientInfo = {
-    ip: req.ip || req.connection.remoteAddress,
-    device: req.headers['user-agent'] || 'Unknown',
+    ip: request.ip,
+    device: request.headers['user-agent'] || 'Unknown',
   };
 
-  const { currentPassword, newPassword } = req.body;
+  const { currentPassword, newPassword, passwordConfirm } = request.body;
 
-  await userService.updateMyPassword(req.user.id, currentPassword, newPassword);
+  if (newPassword !== passwordConfirm) {
+    throw new AppError('As novas senhas não coincidem.', 400);
+  }
 
-  await authService.invalidateAllUserSessions(req.user.id);
+  await userService.updateMyPassword(
+    request.user.id,
+    currentPassword,
+    newPassword,
+  );
+
+  await authService.invalidateAllUserSessions(request.user.id);
 
   const { accessToken, refreshToken } =
-    await authService.generateNewSessionDirectly(req.user.id, clientInfo);
+    await authService.generateNewSessionDirectly(request.user.id, clientInfo);
 
-  setRefreshTokenCookie(res, req, refreshToken);
+  setRefreshTokenCookie(reply, request, refreshToken);
 
   return resfc({
-    res,
+    reply,
     code: 200,
     message: 'Senha alterada com sucesso!',
     data: { accessToken, refreshToken },
   });
-});
+};
 
-export const requestActivationToken = catchAsync(async (req, res) => {
-  await userService.generateAndSendOtp(req.user.id, 'ACCOUNT_VERIFICATION');
+export const requestActivationToken = async (request, reply) => {
+  await userService.generateAndSendOtp(request.user.id, 'ACCOUNT_VERIFICATION');
 
   return resfc({
-    res,
+    reply,
     code: 200,
     message: 'Um novo código de verificação foi enviado para o seu e-mail.',
   });
-});
+};
 
-export const verifyAccount = catchAsync(async (req, res) => {
-  if (req.user.isVerified) {
+export const verifyAccount = async (request, reply) => {
+  if (request.user.isVerified) {
     throw new AppError('Esta conta já se encontra ativa e verificada.', 400);
   }
 
-  const { token } = req.body;
+  const token = sanitizeString(request.body.token);
 
   const { user, message } = await userService.verifyOtpCode(
-    req.user.id,
+    request.user.id,
     token,
     'ACCOUNT_VERIFICATION',
   );
 
   return resfc({
-    res,
+    reply,
     code: 200,
     data: { user },
     message,
   });
-});
+};
 
-export const updateEmailRequest = catchAsync(async (req, res) => {
-  const { newEmail } = req.body;
+export const updateEmailRequest = async (request, reply) => {
+  const newEmail = normalizeInput(request.body.newEmail);
 
-  await userService.generateAndSendOtp(req.user.id, 'EMAIL_CHANGE', {
+  await userService.generateAndSendOtp(request.user.id, 'EMAIL_CHANGE', {
     newEmail,
   });
 
   return resfc({
-    res,
+    reply,
     code: 200,
     message: `Se o e-mail informado for válido e estiver disponível, um código de confirmação será enviado para ele.`,
   });
-});
+};
 
-export const verifyEmailUpdate = catchAsync(async (req, res) => {
-  const { token } = req.body;
+export const verifyEmailUpdate = async (request, reply) => {
+  const token = sanitizeString(request.body.token);
 
   if (!token) {
     throw new AppError('O código de confirmação é obrigatório.', 400);
   }
 
   const { user, message } = await userService.verifyOtpCode(
-    req.user.id,
+    request.user.id,
     token,
     'EMAIL_CHANGE',
   );
 
   return resfc({
-    res,
+    reply,
     code: 200,
     data: { user },
     message,
   });
-});
+};
 
-export const deactivateMe = catchAsync(async (req, res, next) => {
-  const { password } = req.body;
+export const deactivateMe = async (request, reply) => {
+  const { password } = request.body;
 
-  await userService.deactivateUserAccount(req.user.id, password);
+  await userService.deactivateUserAccount(request.user.id, password);
 
-  clearRefreshTokenCookie(res);
+  clearRefreshTokenCookie(reply);
 
   return resfc({
-    res,
+    reply,
     code: 200,
     message: 'Sua conta foi desativada com sucesso. Sentiremos sua falta!',
   });
-});
+};
