@@ -26,7 +26,12 @@ const fastify = Fastify({
 
 fastify.setErrorHandler(errorHandler);
 
-await fastify.register(cors);
+await fastify.register(cors, {
+  origin: 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+});
+
 await fastify.register(helmet);
 await fastify.register(fastifyCookie, {
   secret: process.env.COOKIE_SECRET,

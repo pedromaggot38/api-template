@@ -131,12 +131,14 @@ export const signin = async (request, reply) => {
 
 export const signout = async (request, reply) => {
   const incomingRefreshToken =
-    request.cookies.refreshToken || request.body.refreshToken;
+    request.cookies?.refreshToken || request.body?.refreshToken;
 
-  await authService.revokeSession(incomingRefreshToken);
+  if (incomingRefreshToken) {
+    await authService.revokeSession(incomingRefreshToken);
+  }
 
-  clearRefreshTokenCookie(reply);
-  clearAccessTokenCookie(reply);
+  clearRefreshTokenCookie(reply, request);
+  clearAccessTokenCookie(reply, request);
 
   return resfc({
     reply,

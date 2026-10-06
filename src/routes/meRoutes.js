@@ -8,6 +8,7 @@ import {
   verifyOtpSchema,
 } from '../models/userSchema.js';
 import { uploadAvatar } from '../middlewares/uploadAvatar.js';
+import { Value } from '@sinclair/typebox/value';
 
 export default async function meRoutes(fastify, options) {
   fastify.addHook('preHandler', protect);
