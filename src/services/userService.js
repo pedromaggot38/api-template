@@ -253,6 +253,10 @@ export const updateMyPassword = async (
 export const generateAndSendOtp = async (userId, reason, options = {}) => {
   const user = await findUserOrThrow(userId);
 
+  if (reason === 'ACCOUNT_VERIFICATION' && user.isVerified) {
+    throw new AppError('Esta conta já foi verificada.', 400);
+  }
+
   if (reason === 'EMAIL_CHANGE') {
     if (!options.newEmail) {
       throw new AppError('O novo e-mail é obrigatório para este fluxo.', 400);
@@ -269,7 +273,7 @@ export const generateAndSendOtp = async (userId, reason, options = {}) => {
       options.newEmail,
     );
     if (emailExists) {
-      return true;
+      throw new AppError('O e-mail informado já está em uso.', 400);
     }
   }
 
